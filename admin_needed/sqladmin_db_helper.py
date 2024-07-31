@@ -8,7 +8,6 @@ class SyncDataBaseHelper:
         self.engine: Engine = create_engine(
             url=url,
             echo=echo,
-
         )
 
     def dispose(self):
