@@ -9,6 +9,7 @@ ENV/
 
 # Pycharm
 .idea/
+.idea
 
 # Byte-compiled python files
 __pycache__/
