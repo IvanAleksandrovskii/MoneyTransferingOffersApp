@@ -5,9 +5,13 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 import uvicorn
 
+from sqladmin import Admin
+
 from core import settings
 from core import logger
 from core.models import db_helper
+
+from admin_needed import *
 
 
 @asynccontextmanager
@@ -23,6 +27,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 # ORJSONResponse to increase performance
 main_app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)
+
+# SQLAdmin
+admin = Admin(main_app, engine=db_helper.engine, authentication_backend=None)
+
+admin.add_view(CountryAdmin)
+admin.add_view(CurrencyAdmin)
+admin.add_view(TransferProviderAdmin)
+admin.add_view(TransferRuleAdmin)
 
 # app.include_router(router = api_router, prefix = settings.api_prefix.prefix, tags = ["API Endpoints"])
 
