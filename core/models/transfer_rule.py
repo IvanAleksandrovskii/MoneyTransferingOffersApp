@@ -25,6 +25,9 @@ class TransferRule(Base):
     max_transfer_amount: Mapped[float] = mapped_column(Float, nullable=True)
 
     # Other fields here... What else can we add here? I mean, if we need it
+    # Online / Office
+    # Time transfer takes
+    # Documents needed
 
     def __repr__(self):
         return ("<TransferRule(id=%s, send_country=%s, receive_country=%s, currency=%s, provider=%s, "
