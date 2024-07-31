@@ -1,4 +1,8 @@
-__all__ = ["Base", "db_helper"]
+__all__ = ["Base", "db_helper", "Currency", "Country", "TransferProvider", "TransferRule"]
 
 from .base import Base
 from .db_helper import db_helper
+from .currency import Currency
+from .country import Country
+from .transfer_provider import TransferProvider
+from .transfer_rule import TransferRule
