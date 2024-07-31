@@ -5,18 +5,23 @@ from fastapi import FastAPI
 import uvicorn
 
 from core import settings
+from core import logger
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Startup
+    logger.info("Starting up the FastAPI application...")
+
     yield
+
     # Shutdown
+    logger.info("Shutting down the FastAPI application...")
 
 
 main_app = FastAPI(lifespan=lifespan)
 
-# app.include_router(router, prefix, tags)
+# app.include_router(router = api_router, prefix = settings.api_prefix.prefix, tags = ["API Endpoints"])
 
 
 if __name__ == "__main__":
