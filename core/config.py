@@ -19,9 +19,9 @@ DEBUG = os.getenv("DEBUG", "True").lower() in ('true', '1')
 
 # Database ENV variables
 # TODO: Delete default values (?)
+POSTGRES_DB = os.getenv("POSTGRES_DB", "postgres_db_tg_app")
 POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password")
-POSTGRES_DB = os.getenv("POSTGRES_DB", "postgres_db_tg_app")
 
 POSTGRES_POOL_SIZE = int(os.getenv("POSTGRES_POOL_SIZE", 10))
 POSTGRES_MAX_OVERFLOW = int(os.getenv("POSTGRES_MAX_OVERFLOW", 20))
@@ -41,7 +41,8 @@ class APIPrefixConfig(BaseModel):
 
 
 class DBConfig(BaseModel):
-    url: PostgresDsn = f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@pg:5432/{POSTGRES_DB}"
+    # TODO: Upd URL after docker built
+    url: PostgresDsn = f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@0.0.0.0:5432/{POSTGRES_DB}"
     pool_size: int = POSTGRES_POOL_SIZE
     max_overflow: int = POSTGRES_MAX_OVERFLOW
     echo: bool = POSTGRES_ECHO
@@ -82,6 +83,7 @@ def setup_logging() -> logging.Logger:
     )
     stream_handler.setFormatter(stream_formatter)
 
+    # TODO: write some naming logic
     new_logger = logging.getLogger("Main Logger (form Config)")
     new_logger.setLevel(log_level)
     new_logger.addHandler(stream_handler)
