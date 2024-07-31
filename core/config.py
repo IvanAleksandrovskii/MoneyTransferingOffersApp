@@ -83,7 +83,7 @@ def setup_logging() -> logging.Logger:
     )
     stream_handler.setFormatter(stream_formatter)
 
-    # TODO: write some naming logic
+    # TODO: write some acceptable naming logic
     new_logger = logging.getLogger("MainLogger")
     new_logger.setLevel(log_level)
     new_logger.addHandler(stream_handler)
