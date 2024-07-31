@@ -8,13 +8,13 @@ from core.models import TransferRule
 
 class CountryAdmin(ModelView, model=Country):
     column_list = [Country.id, Country.name, Country.local_currency_id]
-    name = "Countrie"  # TODO: wrong written to fix auto naming issue about multiples with y on the end
+    name = "Countrie"  # TODO: wrong written to fix auto naming issue about multiples with "y" on the end
     # category = "" # TODO: group by categories
 
 
 class CurrencyAdmin(ModelView, model=Currency):
     column_list = [Currency.id, Currency.abbreviation]
-    name = "Currencie"  # TODO: wrong written to fix auto naming issue about multiples with y on the end
+    name = "Currencie"  # TODO: wrong written to fix auto naming issue about multiples with "y" on the end
     # category = "" # TODO: group by categories
 
 
