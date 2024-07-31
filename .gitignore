@@ -1,0 +1,17 @@
+# Environments
+.env
+.env.*
+.venv
+.venv.*
+env/
+venv/
+ENV/
+
+# Pycharm
+.idea/
+
+# Byte-compiled python files
+__pycache__/
+
+# macOS files
+.DS_Store
