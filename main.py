@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 import uvicorn
 
 from core import settings
@@ -20,8 +21,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Shutting down the FastAPI application...")
     await db_helper.dispose()
 
-
-main_app = FastAPI(lifespan=lifespan)
+# ORJSONResponse to increase performance
+main_app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)
 
 # app.include_router(router = api_router, prefix = settings.api_prefix.prefix, tags = ["API Endpoints"])
 
