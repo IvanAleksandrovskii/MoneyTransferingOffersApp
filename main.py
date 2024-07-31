@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 main_app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)
 
 # SQLAdmin
-admin = Admin(main_app, engine=db_helper.engine, authentication_backend=None)
+admin = Admin(main_app, engine=db_helper.engine, authentication_backend=sqladmin_authentication_backend)
 
 admin.add_view(CountryAdmin)
 admin.add_view(CurrencyAdmin)

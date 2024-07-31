@@ -30,6 +30,12 @@ POSTGRES_MAX_OVERFLOW = int(os.getenv("POSTGRES_MAX_OVERFLOW", 20))
 POSTGRES_ECHO = os.getenv("POSTGRES_ECHO", "True").lower() in ('true', '1')
 
 
+# SQLAdmin ENV variables
+SQLADMIN_SECRET_KEY = os.getenv("SQLADMIN_SECRET_KEY", "secret_key_12345")
+SQLADMIN_USERNAME = os.getenv("SQLADMIN_USERNAME", "admin")
+SQLADMIN_PASSWORD = os.getenv("SQLADMIN_PASSWORD", "password")
+
+
 class RunConfig(BaseModel):
     host: str = APP_RUN_HOST
     port: int = APP_RUN_PORT
@@ -56,10 +62,17 @@ class DBConfig(BaseModel):
     }
 
 
+class SQLAdminConfig(BaseModel):
+    secret_key: str = SQLADMIN_SECRET_KEY
+    username: str = SQLADMIN_USERNAME
+    password: str = SQLADMIN_PASSWORD
+
+
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     api_prefix: APIPrefixConfig = APIPrefixConfig()
     db: DBConfig = DBConfig()
+    admin_panel: SQLAdminConfig = SQLAdminConfig()
 
 
 settings = Settings()
