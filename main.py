@@ -6,6 +6,7 @@ import uvicorn
 
 from core import settings
 from core import logger
+from core.models import db_helper
 
 
 @asynccontextmanager
@@ -17,6 +18,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Shutdown
     logger.info("Shutting down the FastAPI application...")
+    await db_helper.dispose()
 
 
 main_app = FastAPI(lifespan=lifespan)
