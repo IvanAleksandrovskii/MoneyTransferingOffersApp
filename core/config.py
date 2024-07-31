@@ -84,7 +84,7 @@ def setup_logging() -> logging.Logger:
     stream_handler.setFormatter(stream_formatter)
 
     # TODO: write some naming logic
-    new_logger = logging.getLogger("Main Logger (form Config)")
+    new_logger = logging.getLogger("MainLogger")
     new_logger.setLevel(log_level)
     new_logger.addHandler(stream_handler)
 
@@ -97,3 +97,15 @@ def setup_logging() -> logging.Logger:
 
 
 logger = setup_logging()
+
+
+# Debug WARNING
+if settings.run.debug:
+    logger.warning("DEBUG mode is on!")
+
+# Database ECHO WARNING
+if settings.db.echo:
+    logger.warning("Database ECHO is on!")
+    # TODO: upd this part as needed
+    if settings.run.debug:
+        logger.info("Database URL: %s", settings.db.url)
