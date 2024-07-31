@@ -75,8 +75,9 @@ def setup_logging() -> logging.Logger:
 
     # Stream handler for console output
     stream_handler = logging.StreamHandler()
+    # TODO: change format up to needed one, now it's made for development debugging
     stream_formatter = jsonlogger.JsonFormatter(
-        fmt='%(asctime)s %(name)s %(levelname)s %(message)s',
+        fmt='%(asctime)s %(name)s %(levelname)s %(message)s %(filename)s:%(lineno)d',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
     stream_handler.setFormatter(stream_formatter)

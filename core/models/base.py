@@ -1,13 +1,19 @@
 import uuid
 
+from sqlalchemy import MetaData
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 
+from core import settings
 from utils import camel_case_to_snake_case
+
+
+metadata = MetaData(naming_convention=settings.db.naming_convention)
 
 
 class Base(DeclarativeBase):
     __abstract__ = True
+    metadata = metadata
 
     @declared_attr
     def __tablename__(cls) -> str:
