@@ -14,7 +14,6 @@ load_dotenv(".env")
 APP_RUN_HOST = str(os.getenv("APP_RUN_HOST", "0.0.0.0"))
 APP_RUN_PORT = int(os.getenv("APP_RUN_PORT", 8000))
 # TODO: change debug to False by default
-# DEBUG = os.getenv("DEBUG", "False").lower() in ('true', '1')
 DEBUG = os.getenv("DEBUG", "True").lower() in ('true', '1')
 
 
@@ -22,7 +21,7 @@ DEBUG = os.getenv("DEBUG", "True").lower() in ('true', '1')
 # TODO: Delete default values (?)
 POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password")
-POSTGRES_DB = os.getenv("POSTGRES_DB", "postgres_db")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "postgres_db_tg_app")
 
 POSTGRES_POOL_SIZE = int(os.getenv("POSTGRES_POOL_SIZE", 10))
 POSTGRES_MAX_OVERFLOW = int(os.getenv("POSTGRES_MAX_OVERFLOW", 20))
