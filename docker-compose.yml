@@ -2,7 +2,7 @@ version: '3.8'
 services:
 
   pg:
-    # image: postgres:13 or any later (just not sure about older versions, maybe ok :))
+    # latest or any fresh one, using modern version of postgres method for table's uuid increment
     image: postgres:latest
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-postgres_db_tg_app}
