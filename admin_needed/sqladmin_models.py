@@ -26,7 +26,7 @@ class TransferProviderAdmin(ModelView, model=TransferProvider):
 
 class TransferRuleAdmin(ModelView, model=TransferRule):
     column_list = [TransferRule.id, TransferRule.send_country_id, TransferRule.receive_country_id,
-                   TransferRule.currency_id, TransferRule.provider_id, TransferRule.fee_percentage,
+                   TransferRule.transfer_currency_id, TransferRule.provider_id, TransferRule.fee_percentage,
                    TransferRule.min_transfer_amount, TransferRule.max_transfer_amount]
 
     # category = "" # TODO: group by categories

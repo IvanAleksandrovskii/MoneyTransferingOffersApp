@@ -1,8 +1,8 @@
 """create transfer rules table
 
-Revision ID: eeec1ff99a35
+Revision ID: edcd30155de7
 Revises: 15d97055efbd
-Create Date: 2024-08-01 13:18:53.408640
+Create Date: 2024-08-01 15:41:34.571998
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'eeec1ff99a35'
+revision: str = 'edcd30155de7'
 down_revision: Union[str, None] = '15d97055efbd'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -23,19 +23,19 @@ def upgrade() -> None:
     op.create_table('transfer_rules',
     sa.Column('send_country_id', sa.UUID(), nullable=False),
     sa.Column('receive_country_id', sa.UUID(), nullable=False),
-    sa.Column('currency_id', sa.UUID(), nullable=False),
     sa.Column('provider_id', sa.UUID(), nullable=False),
     sa.Column('fee_percentage', sa.Float(), nullable=False),
     sa.Column('min_transfer_amount', sa.Float(), nullable=False),
     sa.Column('max_transfer_amount', sa.Float(), nullable=True),
+    sa.Column('transfer_currency_id', sa.UUID(), nullable=False),
     sa.Column('transfer_method', sa.String(), nullable=False),
     sa.Column('estimated_transfer_time', sa.String(), nullable=True),
     sa.Column('required_documents', sa.String(), nullable=True),
     sa.Column('id', sa.UUID(), server_default=sa.text('gen_random_uuid()'), nullable=False),
-    sa.ForeignKeyConstraint(['currency_id'], ['currencies.id'], name=op.f('fk_transfer_rules_currency_id_currencies')),
     sa.ForeignKeyConstraint(['provider_id'], ['transfer_providers.id'], name=op.f('fk_transfer_rules_provider_id_transfer_providers')),
     sa.ForeignKeyConstraint(['receive_country_id'], ['countries.id'], name=op.f('fk_transfer_rules_receive_country_id_countries')),
     sa.ForeignKeyConstraint(['send_country_id'], ['countries.id'], name=op.f('fk_transfer_rules_send_country_id_countries')),
+    sa.ForeignKeyConstraint(['transfer_currency_id'], ['currencies.id'], name=op.f('fk_transfer_rules_transfer_currency_id_currencies')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_transfer_rules'))
     )
     # ### end Alembic commands ###

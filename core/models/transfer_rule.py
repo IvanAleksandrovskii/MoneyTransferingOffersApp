@@ -10,13 +10,11 @@ class TransferRule(Base):
     # TODO: cannot decide on what do we need here
     send_country_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("countries.id"), nullable=False)
     receive_country_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("countries.id"), nullable=False)
-    currency_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("currencies.id"), nullable=False)
     provider_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transfer_providers.id"), nullable=False)
 
     # TODO: think about it: need to improve, but dk how, keeping it as it is for now
     send_country = relationship("Country", foreign_keys=[send_country_id])
     receive_country = relationship("Country", foreign_keys=[receive_country_id])
-    currency = relationship("Currency", foreign_keys=[currency_id])
     provider = relationship("TransferProvider", foreign_keys=[provider_id])
 
     # TODO: nullable=False? or not? could be null if no min or max? should we use default value in that case?
@@ -24,11 +22,15 @@ class TransferRule(Base):
     min_transfer_amount: Mapped[float] = mapped_column(Float, nullable=False)
     max_transfer_amount: Mapped[float] = mapped_column(Float, nullable=True)
 
+    # Info about transfer currency
+    transfer_currency_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("currencies.id"), nullable=False)
+    transfer_currency = relationship("Currency", foreign_keys=[transfer_currency_id])
+
     # Other fields here... What else can we add here? I mean, if we need it
     # Online / Office
     # Time transfer takes
     # Documents needed
-    transfer_method: Mapped[str] = mapped_column(String, nullable=False)  # Online / Office
+    transfer_method: Mapped[str] = mapped_column(String, nullable=False)  # Online / Office TODO: maybe enum or binary?
     estimated_transfer_time: Mapped[str] = mapped_column(String, nullable=True)  # Time transfer takes: hours/days etc.
     required_documents: Mapped[str] = mapped_column(String, nullable=True)
 
@@ -38,7 +40,7 @@ class TransferRule(Base):
             self.id,
             self.send_country_id,
             self.receive_country_id,
-            self.currency_id,
+            self.transfer_currency_id,
             self.provider_id,
             self.fee_percentage,
             self.min_transfer_amount,
