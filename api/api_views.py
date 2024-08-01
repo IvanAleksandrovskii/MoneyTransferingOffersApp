@@ -69,6 +69,8 @@ async def get_transfer_options(
         TransferRule.transfer_currency_id == currency.id,
         TransferRule.min_transfer_amount <= request.amount,
         TransferRule.max_transfer_amount >= request.amount
+        # TODO: Check logic here, cause if min is 0 than I can transfer 0? Absolutely not. Than mb need to
+        #     add some validation logic (?), like "amount should be more than 0"
     )
 
     result = await session.execute(query)
