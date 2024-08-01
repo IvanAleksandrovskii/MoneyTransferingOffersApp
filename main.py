@@ -10,6 +10,7 @@ from sqladmin import Admin
 from core import settings
 from core import logger
 from core.models import db_helper
+from api import api_router
 
 from admin_needed import *
 
@@ -24,6 +25,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown
     logger.info("Shutting down the FastAPI application...")
     await db_helper.dispose()
+    sync_sqladmin_db_helper.dispose()  # Admin db engine dispose
 
 # ORJSONResponse to increase performance
 main_app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)
@@ -36,7 +38,7 @@ admin.add_view(CurrencyAdmin)
 admin.add_view(TransferProviderAdmin)
 admin.add_view(TransferRuleAdmin)
 
-# app.include_router(router = api_router, prefix = settings.api_prefix.prefix, tags = ["API Endpoints"])
+main_app.include_router(router=api_router, prefix=settings.api_prefix.prefix, tags=["API Endpoints"])
 
 
 if __name__ == "__main__":
