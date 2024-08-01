@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, Float
+from sqlalchemy import ForeignKey, Float, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models import Base
@@ -28,6 +28,9 @@ class TransferRule(Base):
     # Online / Office
     # Time transfer takes
     # Documents needed
+    transfer_method: Mapped[str] = mapped_column(String, nullable=False)  # Online / Office
+    estimated_transfer_time: Mapped[str] = mapped_column(String, nullable=True)  # Time transfer takes: hours/days etc.
+    required_documents: Mapped[str] = mapped_column(String, nullable=True)
 
     def __repr__(self):
         return ("<TransferRule(id=%s, send_country=%s, receive_country=%s, currency=%s, provider=%s, "

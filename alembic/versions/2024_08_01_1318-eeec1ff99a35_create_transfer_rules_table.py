@@ -1,8 +1,8 @@
 """create transfer rules table
 
-Revision ID: 0be540b4e045
-Revises: 09fdf2f6ab4d
-Create Date: 2024-08-01 02:18:53.940325
+Revision ID: eeec1ff99a35
+Revises: 15d97055efbd
+Create Date: 2024-08-01 13:18:53.408640
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0be540b4e045'
-down_revision: Union[str, None] = '09fdf2f6ab4d'
+revision: str = 'eeec1ff99a35'
+down_revision: Union[str, None] = '15d97055efbd'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -28,6 +28,9 @@ def upgrade() -> None:
     sa.Column('fee_percentage', sa.Float(), nullable=False),
     sa.Column('min_transfer_amount', sa.Float(), nullable=False),
     sa.Column('max_transfer_amount', sa.Float(), nullable=True),
+    sa.Column('transfer_method', sa.String(), nullable=False),
+    sa.Column('estimated_transfer_time', sa.String(), nullable=True),
+    sa.Column('required_documents', sa.String(), nullable=True),
     sa.Column('id', sa.UUID(), server_default=sa.text('gen_random_uuid()'), nullable=False),
     sa.ForeignKeyConstraint(['currency_id'], ['currencies.id'], name=op.f('fk_transfer_rules_currency_id_currencies')),
     sa.ForeignKeyConstraint(['provider_id'], ['transfer_providers.id'], name=op.f('fk_transfer_rules_provider_id_transfer_providers')),
