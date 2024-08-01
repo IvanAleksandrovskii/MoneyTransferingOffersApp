@@ -10,15 +10,42 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     ports:
       - "5432:5432"
-#    networks:
-#      - some_network
-#    volumes:
-#      - pg_data:/var/lib/postgresql/data
+    networks:
+      - inner_transfer_calculator_service
+    volumes:
+      - pg_data:/var/lib/postgresql/data
 
-#networks:
-#  some_network:
-#    external: false
-#    driver: bridge
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${APP_RUN_PORT:-8000}:8000"
+    networks:
+      - inner_transfer_calculator_service
+    depends_on:
+      - pg
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - APP_RUN_HOST=${APP_RUN_HOST:-0.0.0.0}
+      - APP_RUN_PORT=${APP_RUN_PORT:-8000}
 
-#volumes:
-#  pg_data:
+      - POSTGRES_DB=${POSTGRES_DB:-postgres_db_tg_app}
+      - POSTGRES_ECHO=${POSTGRES_ECHO:-False}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_POOL_SIZE=${POSTGRES_POOL_SIZE:-10}
+      - POSTGRES_MAX_OVERFLOW=${POSTGRES_MAX_OVERFLOW:-20}
+
+      - SQLADMIN_SECRET_KEY=${SQLADMIN_SECRET_KEY:-secret_key_12345}
+      - SQLADMIN_USERNAME=${SQLADMIN_USERNAME:-admin}
+      - SQLADMIN_PASSWORD=${SQLADMIN_PASSWORD:-password}
+    command: /app/start.sh
+
+networks:
+  inner_transfer_calculator_service:
+    external: false
+    driver: bridge
+
+volumes:
+  pg_data:
