@@ -66,7 +66,7 @@ async def get_transfer_options(
     ).filter(
         TransferRule.send_country_id == from_country.id,
         TransferRule.receive_country_id == to_country.id,
-        TransferRule.currency_id == currency.id,
+        TransferRule.transfer_currency_id == currency.id,
         TransferRule.min_transfer_amount <= request.amount,
         TransferRule.max_transfer_amount >= request.amount
     )
