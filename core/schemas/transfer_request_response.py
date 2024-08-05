@@ -23,7 +23,7 @@ class TransferRuleResponse(BaseModel):
     provider_name: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
     @classmethod
     def from_orm(cls, db_object):
@@ -48,7 +48,7 @@ class ProviderResponse(BaseModel):
     transfer_rules: List[TransferRuleResponse]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
     # TODO: add url logic
     # url: Optional[str]
