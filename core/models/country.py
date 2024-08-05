@@ -13,7 +13,6 @@ class Country(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
 
     local_currency_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("currencies.id"), nullable=False)
-
     local_currency = relationship("Currency")
 
     def __repr__(self) -> str:

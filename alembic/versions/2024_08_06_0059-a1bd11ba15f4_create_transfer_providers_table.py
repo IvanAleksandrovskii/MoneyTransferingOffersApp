@@ -1,8 +1,8 @@
-"""create transfer provider table
+"""create transfer providers table
 
-Revision ID: 15d97055efbd
-Revises: e0d3c4184ce7
-Create Date: 2024-08-01 13:18:06.737740
+Revision ID: a1bd11ba15f4
+Revises: 884b8a3109b7
+Create Date: 2024-08-06 00:59:34.180348
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '15d97055efbd'
-down_revision: Union[str, None] = 'e0d3c4184ce7'
+revision: str = 'a1bd11ba15f4'
+down_revision: Union[str, None] = '884b8a3109b7'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -23,7 +23,9 @@ def upgrade() -> None:
     op.create_table('transfer_providers',
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('id', sa.UUID(), server_default=sa.text('gen_random_uuid()'), nullable=False),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_transfer_providers'))
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_transfer_providers')),
+    sa.UniqueConstraint('name', name=op.f('uq_transfer_providers_name'))
     )
     # ### end Alembic commands ###
 

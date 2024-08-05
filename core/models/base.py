@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import MetaData, text
+from sqlalchemy import MetaData, text, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 
@@ -25,3 +25,4 @@ class Base(DeclarativeBase):
         server_default=text("gen_random_uuid()"),
         default=uuid.uuid4
     )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
