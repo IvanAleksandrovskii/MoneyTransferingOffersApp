@@ -20,7 +20,8 @@ class TransferRule(Base):
     receive_country: Mapped[Country] = relationship("Country", foreign_keys=[receive_country_id])
 
     provider_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transfer_providers.id"), nullable=False)
-    provider: Mapped[TransferProvider] = relationship("TransferProvider", foreign_keys=[provider_id])
+    provider: Mapped[TransferProvider] = relationship("TransferProvider", foreign_keys=[provider_id],
+                                                      back_populates="transfer_rules")
 
     # TODO: nullable=False? or not? could be null if no min or max? should we use default 0 value in that case?
     # TODO: Same about max! What if we don't have max? So some validation errors could occur?
@@ -37,7 +38,8 @@ class TransferRule(Base):
     # Time transfer takes
     # Documents needed
     transfer_method: Mapped[str] = mapped_column(String, nullable=False)  # Online / Office TODO: maybe enum or binary?
-    estimated_transfer_time: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # Time transfer takes: hours/days etc.
+    estimated_transfer_time: Mapped[Optional[str]] = mapped_column(String,
+                                                                   nullable=True)  # Time transfer takes: hours/days etc.
     required_documents: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     __table_args__ = (
