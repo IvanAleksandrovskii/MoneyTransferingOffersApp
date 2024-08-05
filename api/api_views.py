@@ -3,12 +3,12 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, aliased
+from sqlalchemy.orm import joinedload, aliased, selectinload
 
 from core.models import db_helper, Currency, Country, ProviderExchangeRate
 from core.models import TransferRule
 from core.models import TransferProvider
-from core.schemas import ProviderResponse, TransferRequest, TransferRuleResponse
+from core.schemas import ProviderResponse, TransferRequest, TransferRuleResponse, TransferResponse
 
 router = APIRouter()
 
@@ -18,7 +18,10 @@ async def get_providers(session: AsyncSession = Depends(db_helper.session_getter
     query = (
         select(TransferProvider)
         .filter(TransferProvider.is_active == True)
-        .options(joinedload(TransferProvider.transfer_rules))
+        .options(selectinload(TransferProvider.transfer_rules).selectinload(TransferRule.send_country))
+        .options(selectinload(TransferProvider.transfer_rules).selectinload(TransferRule.receive_country))
+        .options(selectinload(TransferProvider.transfer_rules).selectinload(TransferRule.transfer_currency))
+        .options(selectinload(TransferProvider.transfer_rules).selectinload(TransferRule.provider))  # TODO: move provider to the top
     )
     result = await session.execute(query)
     providers = result.unique().scalars().all()
@@ -66,10 +69,10 @@ async def get_transfer_rules(
     return [TransferRuleResponse.from_orm(rule) for rule in rules]
 
 
-@router.post("/calculate-transfer")
+@router.post("/calculate-transfer", response_model=List[TransferResponse])
 async def calculate_transfer(
-        transfer: TransferRequest,
-        session: AsyncSession = Depends(db_helper.session_getter)
+    transfer: TransferRequest,
+    session: AsyncSession = Depends(db_helper.session_getter)
 ):
     SendCountry = aliased(Country)
     ReceiveCountry = aliased(Country)
@@ -91,10 +94,10 @@ async def calculate_transfer(
     )
 
     result = await session.execute(query)
-    rule = result.unique().scalar_one_or_none()
+    rules = result.unique().scalars().all()
 
-    if not rule:
-        raise HTTPException(status_code=404, detail="Transfer rule not found")
+    if not rules:
+        raise HTTPException(status_code=404, detail="No transfer rules found")
 
     src_currency = await session.execute(select(Currency).where(Currency.abbreviation == transfer.currency))
     src_currency = src_currency.scalar_one_or_none()
@@ -102,42 +105,56 @@ async def calculate_transfer(
     if not src_currency:
         raise HTTPException(status_code=404, detail="Source currency not found")
 
-    dst_currency = rule.transfer_currency
+    responses = []
 
-    exchange_rate_query = select(ProviderExchangeRate).where(
-        and_(
-            ProviderExchangeRate.provider_id == rule.provider_id,
-            ProviderExchangeRate.from_currency_id == src_currency.id,
-            ProviderExchangeRate.to_currency_id == dst_currency.id
-        )
-    )
-    exchange_rate = await session.execute(exchange_rate_query)
-    exchange_rate = exchange_rate.scalar_one_or_none()
+    for rule in rules:
+        dst_currency = rule.transfer_currency
 
-    if not exchange_rate:
-        raise HTTPException(status_code=404, detail="Exchange rate not found")
+        if src_currency.id != dst_currency.id:
+            # Find exchange rate
+            exchange_rate_query = select(ProviderExchangeRate).where(
+                and_(
+                    ProviderExchangeRate.provider_id == rule.provider_id,
+                    ProviderExchangeRate.from_currency_id == src_currency.id,
+                    ProviderExchangeRate.to_currency_id == dst_currency.id
+                )
+            )
+            exchange_rate = await session.execute(exchange_rate_query)
+            exchange_rate = exchange_rate.scalar_one_or_none()
 
-    converted_amount = transfer.amount * exchange_rate.rate
+            if not exchange_rate:
+                continue  # Pass this rule if no exchange rate found
 
-    if converted_amount < rule.min_transfer_amount or (
-            rule.max_transfer_amount and converted_amount > rule.max_transfer_amount):
-        raise HTTPException(status_code=400, detail="Transfer amount is out of allowed range")
+            converted_amount = transfer.amount * exchange_rate.rate
+        else:
+            converted_amount = transfer.amount
+            exchange_rate = None
 
-    fee = converted_amount * (rule.fee_percentage / 100)
+        if converted_amount < rule.min_transfer_amount or (
+                rule.max_transfer_amount and converted_amount > rule.max_transfer_amount):
+            continue  # Pass this rule if amount is out of range
 
-    response = {
-        "source_currency": src_currency.abbreviation,
-        "source_amount": transfer.amount,
-        "destination_currency": dst_currency.abbreviation,
-        "converted_amount": converted_amount,
-        "exchange_rate": exchange_rate.rate,
-        "fee_percentage": rule.fee_percentage,
-        "fee_amount": fee,
-        "total_amount": converted_amount + fee,
-        "provider": rule.provider.name,
-        "transfer_method": rule.transfer_method,
-        "estimated_transfer_time": rule.estimated_transfer_time,
-        "required_documents": rule.required_documents
-    }
+        fee = converted_amount * (rule.fee_percentage / 100)
+        transfer_amount = converted_amount - fee
 
-    return response
+        response = {
+            "source_currency": src_currency.abbreviation,
+            "source_amount": transfer.amount,
+            "destination_currency": dst_currency.abbreviation,
+            "converted_amount": converted_amount,
+            "exchange_rate": exchange_rate.rate if exchange_rate else 1.0,
+            "fee_percentage": rule.fee_percentage,
+            "fee_amount": fee,
+            "transfer_amount": transfer_amount,
+            "provider": rule.provider.name,
+            "transfer_method": rule.transfer_method,
+            "estimated_transfer_time": rule.estimated_transfer_time,
+            "required_documents": rule.required_documents
+        }
+
+        responses.append(response)
+
+    if not responses:
+        raise HTTPException(status_code=404, detail="No suitable transfer rules found")
+
+    return responses

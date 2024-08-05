@@ -6,8 +6,8 @@ from core.models import Base
 
 class TransferProvider(Base):
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
-    exchange_rates = relationship("ProviderExchangeRate", back_populates="provider")
-    transfer_rules = relationship("TransferRule", back_populates="provider")
+    exchange_rates = relationship("ProviderExchangeRate", back_populates="provider", cascade="all, delete-orphan")
+    transfer_rules = relationship("TransferRule", back_populates="provider", cascade="all, delete-orphan")
 
     # TODO: think where it should be stored, I mean the link to the provider's source
     # url: Mapped[str] = mapped_column(String, nullable=False)

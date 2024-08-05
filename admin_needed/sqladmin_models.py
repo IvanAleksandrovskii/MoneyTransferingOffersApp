@@ -10,17 +10,20 @@ from core.models import ProviderExchangeRate
 class CountryAdmin(ModelView, model=Country):
     column_list = [Country.id, Country.name, Country.is_active, Country.local_currency_id]
     name = "Country"
+    name_plural = "Countries"
     # category = "" # TODO: group by categories
 
 
 class CurrencyAdmin(ModelView, model=Currency):
     column_list = [Currency.id, Currency.abbreviation, Currency.is_active, Currency.name, Currency.symbol]
     name = "Currency"
+    name_plural = "Currencies"
     # category = "" # TODO: group by categories
 
 
 class TransferProviderAdmin(ModelView, model=TransferProvider):
     column_list = [TransferProvider.id, TransferProvider.name, TransferProvider.is_active]
+    form_excluded_columns = ['exchange_rates', 'transfer_rules']
     # category = "" # TODO: group by categories
 
 

@@ -1,7 +1,7 @@
 from typing import Optional
 import uuid
 
-from sqlalchemy import ForeignKey, Float, String, Index
+from sqlalchemy import ForeignKey, Float, String, Index, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models import Base
@@ -47,6 +47,7 @@ class TransferRule(Base):
         Index('idx_transfer_rule_receive_country', 'receive_country_id'),
         Index('idx_transfer_rule_provider', 'provider_id'),
         Index('idx_transfer_rule_currency', 'transfer_currency_id'),
+        CheckConstraint('min_transfer_amount <= max_transfer_amount', name='check_min_max_transfer_amount'),
     )
 
     def __repr__(self) -> str:
