@@ -1,9 +1,9 @@
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, Field
 from typing import List, Optional
 
 
 class TransferRequest(BaseModel):
-    amount: float
+    amount: float = Field(..., gt=0)  # raises ValidationError if amount <= 0
     currency: str
     from_country: str
     to_country: str
@@ -18,8 +18,7 @@ class TransferRuleResponse(BaseModel):
     transfer_method: str
     estimated_transfer_time: Optional[str]
     required_documents: Optional[str]
-    # TODO: Idea
-    highlights: List[str]
+    exchange_rate: float
 
 
 class ProviderResponse(BaseModel):

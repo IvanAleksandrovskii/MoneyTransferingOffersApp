@@ -36,6 +36,7 @@ admin = Admin(main_app, engine=db_helper.engine, authentication_backend=sqladmin
 admin.add_view(CountryAdmin)
 admin.add_view(CurrencyAdmin)
 admin.add_view(TransferProviderAdmin)
+admin.add_view(ProviderExchangeRateAdmin)
 admin.add_view(TransferRuleAdmin)
 
 main_app.include_router(router=api_router, prefix=settings.api_prefix.prefix, tags=["API Endpoints"])
