@@ -2,12 +2,16 @@ from pydantic import BaseModel, UUID4, Field
 from typing import List, Optional
 
 
-# TODO: Add validation
 class TransferRequest(BaseModel):
     send_country: str
     receive_country: str
-    amount: float = Field(..., gt=0)  # raises ValidationError if amount <= 0
+    amount: float = Field(..., gt=0)
     currency: str
+
+
+class TransferRuleByCountriesRequest(BaseModel):
+    send_country: str
+    receive_country: str
 
 
 class TransferRuleResponse(BaseModel):
@@ -19,8 +23,8 @@ class TransferRuleResponse(BaseModel):
     min_transfer_amount: float
     max_transfer_amount: Optional[float]
     transfer_method: str
-    estimated_transfer_time: Optional[str]
-    required_documents: Optional[str]
+    estimated_time: Optional[str]
+    required_docs: Optional[str]
     provider_name: str
 
     @classmethod
@@ -34,8 +38,8 @@ class TransferRuleResponse(BaseModel):
             min_transfer_amount=db_object.min_transfer_amount,
             max_transfer_amount=db_object.max_transfer_amount,
             transfer_method=db_object.transfer_method,
-            estimated_transfer_time=db_object.estimated_transfer_time,
-            required_documents=db_object.required_documents,
+            estimated_time=db_object.estimated_transfer_time,
+            required_docs=db_object.required_documents,
             provider_name=db_object.provider.name if db_object.provider else None
         )
 
@@ -46,13 +50,10 @@ class TransferRuleResponse(BaseModel):
 class ProviderResponse(BaseModel):
     id: UUID4
     name: str
-    transfer_rules: List[TransferRuleResponse]
+    transfer_rules: List[str]
 
     class Config:
         from_attributes = True
-
-    # TODO: add url logic
-    # url: Optional[str]
 
 
 class TransferResponse(BaseModel):
@@ -66,5 +67,5 @@ class TransferResponse(BaseModel):
     transfer_amount: float
     provider: str
     transfer_method: str
-    estimated_transfer_time: str
-    required_documents: str
+    estimated_time: str
+    required_docs: str

@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, aliased, selectinload
@@ -8,7 +8,8 @@ from sqlalchemy.orm import joinedload, aliased, selectinload
 from core.models import db_helper, Currency, Country, ProviderExchangeRate
 from core.models import TransferRule
 from core.models import TransferProvider
-from core.schemas import ProviderResponse, TransferRequest, TransferRuleResponse, TransferResponse
+from core.schemas import ProviderResponse, TransferRequest, TransferRuleResponse, TransferResponse, \
+    TransferRuleByCountriesRequest
 
 router = APIRouter()
 
@@ -21,7 +22,6 @@ async def get_providers(session: AsyncSession = Depends(db_helper.session_getter
         .options(selectinload(TransferProvider.transfer_rules).selectinload(TransferRule.send_country))
         .options(selectinload(TransferProvider.transfer_rules).selectinload(TransferRule.receive_country))
         .options(selectinload(TransferProvider.transfer_rules).selectinload(TransferRule.transfer_currency))
-        .options(selectinload(TransferProvider.transfer_rules).selectinload(TransferRule.provider))  # TODO: move provider to the top
     )
     result = await session.execute(query)
     providers = result.unique().scalars().all()
@@ -30,17 +30,19 @@ async def get_providers(session: AsyncSession = Depends(db_helper.session_getter
         ProviderResponse(
             id=provider.id,
             name=provider.name,
-            transfer_rules=[TransferRuleResponse.from_orm(rule) for rule in provider.transfer_rules]
+            transfer_rules=[
+                f"{rule.send_country.name}-{rule.receive_country.name}-{rule.transfer_currency.abbreviation}-{rule.min_transfer_amount}-{rule.max_transfer_amount}-{rule.id}"
+                for rule in provider.transfer_rules
+            ]
         )
         for provider in providers
     ]
 
 
-@router.get("/transfer-rules")
+@router.post("/transfer-rules-by-countries", response_model=List[TransferRuleResponse])
 async def get_transfer_rules(
-        send_country: str = Query(..., description="Name of the sending country"),
-        receive_country: str = Query(..., description="Name of the receiving country"),
-        session: AsyncSession = Depends(db_helper.session_getter)
+    transfer: TransferRuleByCountriesRequest,
+    session: AsyncSession = Depends(db_helper.session_getter)
 ):
     SendCountry = aliased(Country)
     ReceiveCountry = aliased(Country)
@@ -51,8 +53,8 @@ async def get_transfer_rules(
         .join(ReceiveCountry, TransferRule.receive_country_id == ReceiveCountry.id)
         .where(
             and_(
-                SendCountry.name == send_country,
-                ReceiveCountry.name == receive_country
+                SendCountry.name == transfer.send_country,
+                ReceiveCountry.name == transfer.receive_country
             )
         )
         .options(
@@ -65,6 +67,9 @@ async def get_transfer_rules(
 
     result = await session.execute(query)
     rules = result.unique().scalars().all()
+
+    if not rules:
+        raise HTTPException(status_code=404, detail="No transfer rules found for the specified countries")
 
     return [TransferRuleResponse.from_orm(rule) for rule in rules]
 
@@ -111,7 +116,6 @@ async def calculate_transfer(
         dst_currency = rule.transfer_currency
 
         if src_currency.id != dst_currency.id:
-            # Find exchange rate
             exchange_rate_query = select(ProviderExchangeRate).where(
                 and_(
                     ProviderExchangeRate.provider_id == rule.provider_id,
@@ -123,7 +127,7 @@ async def calculate_transfer(
             exchange_rate = exchange_rate.scalar_one_or_none()
 
             if not exchange_rate:
-                continue  # Pass this rule if no exchange rate found
+                continue
 
             converted_amount = transfer.amount * exchange_rate.rate
         else:
@@ -132,7 +136,7 @@ async def calculate_transfer(
 
         if converted_amount < rule.min_transfer_amount or (
                 rule.max_transfer_amount and converted_amount > rule.max_transfer_amount):
-            continue  # Pass this rule if amount is out of range
+            continue
 
         fee = converted_amount * (rule.fee_percentage / 100)
         transfer_amount = converted_amount - fee
@@ -148,8 +152,8 @@ async def calculate_transfer(
             "transfer_amount": transfer_amount,
             "provider": rule.provider.name,
             "transfer_method": rule.transfer_method,
-            "estimated_transfer_time": rule.estimated_transfer_time,
-            "required_documents": rule.required_documents
+            "estimated_time": rule.estimated_transfer_time,
+            "required_docs": rule.required_documents
         }
 
         responses.append(response)
