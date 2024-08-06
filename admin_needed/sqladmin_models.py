@@ -1,6 +1,5 @@
 from sqladmin import ModelView
 
-from core import logger
 from core.models import Country
 from core.models import Currency
 from core.models import TransferProvider
@@ -8,11 +7,11 @@ from core.models import TransferRule
 from core.models import ProviderExchangeRate
 
 
-def format_exchange_rate(model, name):
+def format_exchange_rate(model, name):  # Do not delete name form here in is not unused (!), needed for formatting
     return f"{model.provider.name} - {model.from_currency.abbreviation} - {model.to_currency.abbreviation}"
 
 
-def format_transfer_rule(model, name):
+def format_transfer_rule(model, name):  # Do not delete name form here in is not unused (!), needed for formatting
     return (f"{model.provider.name} - {model.send_country.name} - {model.receive_country.name} - "
             f"{model.transfer_currency.abbreviation if model.transfer_currency else 'Unknown'} - "
             f"{model.min_transfer_amount} - {model.max_transfer_amount}")
@@ -22,20 +21,20 @@ class CountryAdmin(ModelView, model=Country):
     column_list = [Country.name, Country.id, Country.is_active, Country.local_currency_id]
     name = "Country"
     name_plural = "Countries"
-    category = "Global"  # Done
+    category = "Global"  # Done todo double check
 
 
 class CurrencyAdmin(ModelView, model=Currency):
     column_list = [Currency.abbreviation, Currency.id, Currency.is_active, Currency.name, Currency.symbol]
     name = "Currency"
     name_plural = "Currencies"
-    category = "Global"  # Done
+    category = "Global"  # Done todo double check
 
 
 class TransferProviderAdmin(ModelView, model=TransferProvider):
     column_list = [TransferProvider.name, TransferProvider.id, TransferProvider.is_active]
     form_excluded_columns = ['exchange_rates', 'transfer_rules']
-    category = "Providers"  # Done
+    category = "Providers"  # Done todo double check
 
 
 class TransferRuleAdmin(ModelView, model=TransferRule):
@@ -55,7 +54,7 @@ class TransferRuleAdmin(ModelView, model=TransferRule):
         "formatted_transfer_rule": format_transfer_rule
     }
     name = "Transfer Rule"
-    category = "Providers"  # Done
+    category = "Providers"  # Done todo double check
 
 
 class ProviderExchangeRateAdmin(ModelView, model=ProviderExchangeRate):
@@ -73,4 +72,4 @@ class ProviderExchangeRateAdmin(ModelView, model=ProviderExchangeRate):
         "formatted_exchange_rate": format_exchange_rate
     }
     name = "Provider Exchange Rate"
-    category = "Providers"  # Done
+    category = "Providers"  # Done todo double check
