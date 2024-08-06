@@ -80,3 +80,26 @@ class GenericObjectResponse(BaseModel):
     data: dict[str, Any]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TransferRuleDetails(BaseModel):
+    id: UUID4
+    provider: ProviderResponse
+    transfer_method: str
+    estimated_transfer_time: Optional[str]
+    required_documents: Optional[str]
+    original_amount: float
+    converted_amount: float
+    transfer_currency: CurrencyResponse
+    amount_received: float
+    transfer_fee: float
+    transfer_fee_percentage: float
+    min_transfer_amount: float
+    max_transfer_amount: Optional[float]
+
+
+class OptimizedTransferRuleResponse(BaseModel):
+    send_country: CountryResponse
+    receive_country: CountryResponse
+    original_currency: CurrencyResponse
+    rules: List[TransferRuleDetails]

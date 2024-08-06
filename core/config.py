@@ -44,6 +44,7 @@ class RunConfig(BaseModel):
 
 class APIPrefixConfig(BaseModel):
     prefix: str = "/api"
+    extended: str = "/api/ext"  # TODO: change it the way it should be (??)
 
 
 class DBConfig(BaseModel):
