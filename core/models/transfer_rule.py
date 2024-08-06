@@ -1,10 +1,10 @@
 from typing import Optional
 import uuid
 
-from sqlalchemy import ForeignKey, Float, String, Index, CheckConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import ForeignKey, Float, String, Index, CheckConstraint, select
+from sqlalchemy.orm import Mapped, mapped_column, relationship, joinedload
 
-from core.models import Base
+from core.models import Base, db_helper
 from core.models.country import Country
 from core.models.currency import Currency
 from core.models.transfer_provider import TransferProvider
@@ -14,14 +14,14 @@ class TransferRule(Base):
     # TODO: What about adding more fields or improving the structure of this model? (?)
     # TODO: Add methods for business logic, such as calculating fees, validating transfer amounts, etc.
     send_country_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("countries.id"), nullable=False)
-    send_country: Mapped[Country] = relationship("Country", foreign_keys=[send_country_id])
+    send_country: Mapped[Country] = relationship("Country", foreign_keys=[send_country_id], lazy="joined")
 
     receive_country_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("countries.id"), nullable=False)
-    receive_country: Mapped[Country] = relationship("Country", foreign_keys=[receive_country_id])
+    receive_country: Mapped[Country] = relationship("Country", foreign_keys=[receive_country_id], lazy="joined")
 
     provider_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transfer_providers.id"), nullable=False)
     provider: Mapped[TransferProvider] = relationship("TransferProvider", foreign_keys=[provider_id],
-                                                      back_populates="transfer_rules")
+                                                      back_populates="transfer_rules", lazy="joined")
 
     # TODO: nullable=False? or not? could be null if no min or max? should we use default 0 value in that case?
     # TODO: Same about max! What if we don't have max? So some validation errors could occur?
@@ -31,7 +31,8 @@ class TransferRule(Base):
 
     # Info about transfer currency
     transfer_currency_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("currencies.id"), nullable=True)
-    transfer_currency: Mapped[Optional[Currency]] = relationship("Currency", foreign_keys=[transfer_currency_id])
+    transfer_currency: Mapped[Optional[Currency]] = relationship("Currency", foreign_keys=[transfer_currency_id],
+                                                                lazy="joined")
 
     # Other fields here... What else can we add here? I mean, if we need it
     # Online / Office

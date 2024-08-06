@@ -1,71 +1,75 @@
-from pydantic import BaseModel, UUID4, Field
-from typing import List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, UUID4, ConfigDict
+from typing import List, Optional, Any, Union
+from datetime import datetime
 
 
-class TransferRequest(BaseModel):
-    send_country: str
-    receive_country: str
-    amount: float = Field(..., gt=0)
-    currency: str
-
-
-class TransferRuleByCountriesRequest(BaseModel):
-    send_country: str
-    receive_country: str
-
-
-class TransferRuleResponse(BaseModel):
+class CurrencyResponse(BaseModel):
     id: UUID4
-    send_country: str
-    receive_country: str
-    transfer_currency: str
-    fee_percentage: float
-    min_transfer_amount: float
-    max_transfer_amount: Optional[float]
-    transfer_method: str
-    estimated_time: Optional[str]
-    required_docs: Optional[str]
-    provider_name: str
+    name: str
+    symbol: Optional[str]
+    abbreviation: str
 
-    @classmethod
-    def from_orm(cls, db_object):
-        return cls(
-            id=db_object.id,
-            send_country=db_object.send_country.name if db_object.send_country else None,
-            receive_country=db_object.receive_country.name if db_object.receive_country else None,
-            transfer_currency=db_object.transfer_currency.abbreviation if db_object.transfer_currency else None,
-            fee_percentage=db_object.fee_percentage,
-            min_transfer_amount=db_object.min_transfer_amount,
-            max_transfer_amount=db_object.max_transfer_amount,
-            transfer_method=db_object.transfer_method,
-            estimated_time=db_object.estimated_transfer_time,
-            required_docs=db_object.required_documents,
-            provider_name=db_object.provider.name if db_object.provider else None
-        )
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
+
+class CountryResponse(BaseModel):
+    id: UUID4
+    name: str
+    local_currency: CurrencyResponse
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProviderResponse(BaseModel):
     id: UUID4
     name: str
-    transfer_rules: List[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
-class TransferResponse(BaseModel):
-    source_currency: str
-    source_amount: float
-    destination_currency: str
-    converted_amount: float
-    exchange_rate: float
+class TransferRuleResponse(BaseModel):
+    id: UUID4
+    send_country: CountryResponse
+    receive_country: CountryResponse
+    transfer_currency: CurrencyResponse
+    provider: ProviderResponse
     fee_percentage: float
-    fee_amount: float
-    transfer_amount: float
-    provider: str
+    min_transfer_amount: float
+    max_transfer_amount: Optional[float]
     transfer_method: str
-    estimated_time: str
-    required_docs: str
+    estimated_transfer_time: Optional[str]
+    required_documents: Optional[str]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExchangeRateResponse(BaseModel):
+    id: UUID4
+    provider: ProviderResponse
+    from_currency: CurrencyResponse
+    to_currency: CurrencyResponse
+    rate: float
+    last_updated: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TransferRuleRequest(BaseModel):
+    send_country: Union[str, UUID]
+    receive_country: Union[str, UUID]
+
+
+class TransferRuleFullRequest(BaseModel):
+    send_country: Union[str, UUID]
+    receive_country: Union[str, UUID]
+    from_currency: Union[str, UUID]
+    amount: float
+
+
+class GenericObjectResponse(BaseModel):
+    object_type: str
+    data: dict[str, Any]
+
+    model_config = ConfigDict(from_attributes=True)
