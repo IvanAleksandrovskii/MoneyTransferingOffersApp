@@ -190,44 +190,67 @@ async def get_transfer_rules_full_filled_info(
     for rule in rules:
         logger.info(f"Checking rule {rule.id}: {rule.provider.name}, {rule.transfer_currency.abbreviation}")
 
-        amount_to_check = transfer.amount
+        original_amount = transfer.amount
+        converted_amount = original_amount
+        conversion_path = []
 
         if rule.transfer_currency.id != from_currency.id:
             try:
-                amount_to_check = await convert_currency(session, transfer.amount, from_currency,
-                                                         rule.transfer_currency, rule.provider)
-                logger.info(f"Converted amount: {amount_to_check} {rule.transfer_currency.abbreviation}")
-            except HTTPException as e:
-                logger.error(f"Error converting currency for rule {rule.id}: {str(e)}")
-                continue  # Skip this rule if conversion fails
+                # Прямая конвертация
+                converted_amount = await convert_currency(session, original_amount, from_currency,
+                                                          rule.transfer_currency, rule.provider)
+                conversion_path = [from_currency, rule.transfer_currency]
+            except HTTPException:
+                logger.info(f"Direct conversion not found, trying through USD")
+                try:
+                    # Конвертация через USD
+                    usd_currency = await get_object_by_id_or_name(session, Currency, "USD")
+                    amount_in_usd = await convert_currency(session, original_amount, from_currency, usd_currency,
+                                                           rule.provider)
+                    converted_amount = await convert_currency(session, amount_in_usd, usd_currency,
+                                                              rule.transfer_currency, rule.provider)
+                    conversion_path = [from_currency, usd_currency, rule.transfer_currency]
+                except HTTPException as e:
+                    logger.error(f"Error converting currency for rule {rule.id}: {str(e)}")
+                    continue  # Пропускаем это правило, если конвертация не удалась
 
-        if rule.min_transfer_amount <= amount_to_check <= (rule.max_transfer_amount or float('inf')):
-            valid_rules.append(rule)
+        logger.info(f"Converted amount: {converted_amount} {rule.transfer_currency.abbreviation}")
+        logger.info(f"Conversion path: {' -> '.join([c.abbreviation for c in conversion_path])}")
+
+        # Расчет комиссии за перевод
+        transfer_fee = converted_amount * (rule.fee_percentage / 100)
+        amount_received = converted_amount - transfer_fee
+
+        if rule.min_transfer_amount <= converted_amount <= (rule.max_transfer_amount or float('inf')):
+            valid_rule = TransferRuleResponse(
+                id=rule.id,
+                send_country=CountryResponse.model_validate(rule.send_country),
+                receive_country=CountryResponse.model_validate(rule.receive_country),
+                provider=ProviderResponse.model_validate(rule.provider),
+                transfer_fee_percentage=rule.fee_percentage,
+                min_transfer_amount=rule.min_transfer_amount,
+                max_transfer_amount=rule.max_transfer_amount,
+                transfer_method=rule.transfer_method,
+                estimated_transfer_time=rule.estimated_transfer_time,
+                required_documents=rule.required_documents,
+                original_amount=original_amount,
+                original_currency=CurrencyResponse.model_validate(from_currency),
+                converted_amount=converted_amount,
+                transfer_currency=CurrencyResponse.model_validate(rule.transfer_currency),
+                transfer_fee=transfer_fee,
+                amount_received=amount_received
+            )
+            valid_rules.append(valid_rule)
             logger.info(f"Rule {rule.id} is valid")
         else:
             logger.info(
-                f"Rule {rule.id} is not valid. Amount {amount_to_check} is out of range [{rule.min_transfer_amount}, {rule.max_transfer_amount or 'inf'}]")
+                f"Rule {rule.id} is not valid. Amount {converted_amount} is out of range [{rule.min_transfer_amount}, {rule.max_transfer_amount or 'inf'}]")
 
     if not valid_rules:
         logger.warning("No valid rules found after applying amount restrictions")
         raise HTTPException(status_code=404, detail="No valid transfer rules found for the specified parameters")
 
-    return [
-        TransferRuleResponse(
-            id=rule.id,
-            send_country=CountryResponse.model_validate(rule.send_country),
-            receive_country=CountryResponse.model_validate(rule.receive_country),
-            transfer_currency=CurrencyResponse.model_validate(rule.transfer_currency),
-            provider=ProviderResponse.model_validate(rule.provider),
-            fee_percentage=rule.fee_percentage,
-            min_transfer_amount=rule.min_transfer_amount,
-            max_transfer_amount=rule.max_transfer_amount,
-            transfer_method=rule.transfer_method,
-            estimated_transfer_time=rule.estimated_transfer_time,
-            required_documents=rule.required_documents
-        )
-        for rule in valid_rules
-    ]
+    return valid_rules
 
 
 @router.get("/provider/{provider_id}/exchange-rates", response_model=List[ExchangeRateResponse])

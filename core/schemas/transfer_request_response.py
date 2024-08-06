@@ -33,14 +33,21 @@ class TransferRuleResponse(BaseModel):
     id: UUID4
     send_country: CountryResponse
     receive_country: CountryResponse
-    transfer_currency: CurrencyResponse
     provider: ProviderResponse
-    fee_percentage: float
-    min_transfer_amount: float
-    max_transfer_amount: Optional[float]
     transfer_method: str
     estimated_transfer_time: Optional[str]
     required_documents: Optional[str]
+
+    # TODO: New fields added (!)
+    original_amount: float
+    original_currency: CurrencyResponse
+    converted_amount: float
+    transfer_currency: CurrencyResponse
+    amount_received: float
+    transfer_fee: float
+    transfer_fee_percentage: float
+    min_transfer_amount: float
+    max_transfer_amount: Optional[float]
 
     model_config = ConfigDict(from_attributes=True)
 
