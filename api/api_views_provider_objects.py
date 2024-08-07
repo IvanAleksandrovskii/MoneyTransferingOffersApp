@@ -49,6 +49,20 @@ async def get_provider_rules_by_id(
     return [DetailedTransferRuleResponse.model_validate(rule) for rule in rules]
 
 
+@router.get("/transfer-rules", response_model=List[DetailedTransferRuleResponse], tags=["Provider Objects"])
+async def get_all_transfer_rules(session: AsyncSession = Depends(db_helper.session_getter)):
+    query = select(TransferRule).options(
+        joinedload(TransferRule.send_country),
+        joinedload(TransferRule.receive_country),
+        joinedload(TransferRule.provider),
+        joinedload(TransferRule.transfer_currency)
+    )
+    result = await session.execute(query)
+    rules = result.unique().scalars().all()
+
+    return [DetailedTransferRuleResponse.model_validate(rule) for rule in rules]
+
+
 @router.get("/provider/{provider_id}/exchange-rates", response_model=List[ExchangeRateResponse], tags=["Provider Objects"])
 async def get_provider_exchange_rates(
         provider_id: UUID,
@@ -108,17 +122,3 @@ async def get_all_exchange_rates(session: AsyncSession = Depends(db_helper.sessi
         rate=rate.rate,
         last_updated=rate.last_updated
     ) for rate in rates]
-
-
-@router.get("/transfer-rules", response_model=List[DetailedTransferRuleResponse], tags=["Provider Objects"])
-async def get_all_transfer_rules(session: AsyncSession = Depends(db_helper.session_getter)):
-    query = select(TransferRule).options(
-        joinedload(TransferRule.send_country),
-        joinedload(TransferRule.receive_country),
-        joinedload(TransferRule.provider),
-        joinedload(TransferRule.transfer_currency)
-    )
-    result = await session.execute(query)
-    rules = result.unique().scalars().all()
-
-    return [DetailedTransferRuleResponse.model_validate(rule) for rule in rules]
