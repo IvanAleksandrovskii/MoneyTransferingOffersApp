@@ -1,20 +1,20 @@
 from typing import List, Any
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, inspect
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from core import logger
-from core.models import db_helper, Currency, Country, ProviderExchangeRate, TransferRule, TransferProvider
+from core.models import db_helper, Currency, Country, TransferRule
 from core.schemas import (
     ProviderResponse, TransferRuleRequest,
-    CurrencyResponse, CountryResponse, GenericObjectResponse, TransferRuleFullRequest, OptimizedTransferRuleResponse, TransferRuleDetails
+    CurrencyResponse, CountryResponse, TransferRuleFullRequest, OptimizedTransferRuleResponse, TransferRuleDetails
 )
 from core.services.convert_currency import convert_currency
 from core.services.get_currency_by_abbreviation import get_currency_by_abbreviation
 from core.services.get_object import get_object_by_id
+
 
 router = APIRouter()
 
@@ -180,25 +180,3 @@ async def get_transfer_rules_full_filled_info(
         original_currency=CurrencyResponse.model_validate(from_currency),
         rules=rule_details
     )
-
-
-# TODO: SUPER ENDPOINT - del (?)
-@router.get("/object/{uuid}", response_model=GenericObjectResponse)
-async def get_object_by_uuid(
-        uuid: UUID,
-        session: AsyncSession = Depends(db_helper.session_getter)
-):
-    for model in [Country, Currency, TransferProvider, TransferRule, ProviderExchangeRate]:
-        obj = await session.get(model, uuid)
-        if obj:
-            # Extract data excluding SQLAlchemy fields
-            data = {
-                attr_name: getattr(obj, attr_name)
-                for attr_name, column in inspect(model).mapper.column_attrs.items()
-                if not attr_name.startswith('_')
-            }
-            return GenericObjectResponse(
-                object_type=model.__name__,
-                data=data
-            )
-    raise HTTPException(status_code=404, detail="Object not found")

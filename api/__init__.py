@@ -1,17 +1,16 @@
 from fastapi import APIRouter
 
-from .api_views_main import router as api_view_main_router
-from .api_views_by_name import router as api_router_by_name
-from .api_views_global_objects import router as api_router_global_objects
-from .api_views_provider_objects import router as api_router_provider_objects
+from .api_main_views import router as main_router
+from .api_views_global_objects import router as global_objects_router
+from .api_views_provider_objects import router as provider_objects_router
+from .api_views_by_name import router as by_name_router
+from .api_super_views import router as super_router
 
 
 api_router = APIRouter()
-api_router2 = APIRouter()
 
-api_router.include_router(api_view_main_router)
-api_router2.include_router(api_router_global_objects)
-api_router2.include_router(api_router_provider_objects)
-api_router2.include_router(api_router_by_name)
-
-__all__ = ["api_router", "api_router2"]
+api_router.include_router(main_router, tags=["Main"])
+api_router.include_router(super_router, tags=["Super"])
+api_router.include_router(global_objects_router, prefix="/global-objects", tags=["Global Objects"])
+api_router.include_router(provider_objects_router, prefix="/provider-objects", tags=["Provider Objects"])
+api_router.include_router(by_name_router, prefix="/by-name", tags=["By Name"])

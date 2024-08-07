@@ -11,10 +11,11 @@ from core.schemas import (
 )
 from core.services.get_object import get_object_by_name
 
+
 router = APIRouter()
 
 
-@router.get("/provider/{provider_name}/exchange-rates", response_model=List[ExchangeRateResponse])
+@router.get("/provider/{provider_name}/exchange-rates", response_model=List[ExchangeRateResponse], tags=["By Name"])
 async def get_provider_exchange_rates_by_name(
         provider_name: str,
         session: AsyncSession = Depends(db_helper.session_getter)
@@ -38,7 +39,7 @@ async def get_provider_exchange_rates_by_name(
     return [ExchangeRateResponse.model_validate(rate) for rate in rates]
 
 
-@router.get("/currency/{currency_name}", response_model=CurrencyResponse)
+@router.get("/currency/{currency_name}", response_model=CurrencyResponse, tags=["By Name"])
 async def get_currency_by_name(
         currency_name: str,
         session: AsyncSession = Depends(db_helper.session_getter)
@@ -49,7 +50,7 @@ async def get_currency_by_name(
     return CurrencyResponse.model_validate(currency)
 
 
-@router.get("/country/{country_name}", response_model=CountryResponse)
+@router.get("/country/{country_name}", response_model=CountryResponse, tags=["By Name"])
 async def get_country_by_name(
         country_name: str,
         session: AsyncSession = Depends(db_helper.session_getter)

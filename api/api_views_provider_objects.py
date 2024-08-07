@@ -1,18 +1,20 @@
 from typing import List, Any
 from uuid import UUID
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, APIRouter
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
-from api.api_views_main import router
 from core.services.get_object import get_object_by_id
 from core.models import db_helper, TransferProvider, TransferRule, ProviderExchangeRate
 from core.schemas import ProviderResponse, ExchangeRateResponse, CurrencyResponse
 
 
-@router.get("/providers", response_model=List[ProviderResponse])
+router = APIRouter()
+
+
+@router.get("/providers", response_model=List[ProviderResponse], tags=["Provider Objects"])
 async def get_providers(session: AsyncSession = Depends(db_helper.session_getter)):
     query = (
         select(TransferProvider)
@@ -27,7 +29,7 @@ async def get_providers(session: AsyncSession = Depends(db_helper.session_getter
     return [ProviderResponse.model_validate(provider) for provider in providers]
 
 
-@router.get("/provider/{provider_id}/exchange-rates", response_model=List[ExchangeRateResponse])
+@router.get("/provider/{provider_id}/exchange-rates", response_model=List[ExchangeRateResponse], tags=["Provider Objects"])
 async def get_provider_exchange_rates(
         provider_id: UUID,
         session: AsyncSession = Depends(db_helper.session_getter)
@@ -64,7 +66,7 @@ async def get_provider_exchange_rates(
     ]
 
 
-@router.get("/exchange-rates", response_model=List[ExchangeRateResponse])
+@router.get("/exchange-rates", response_model=List[ExchangeRateResponse], tags=["Provider Objects"])
 async def get_all_exchange_rates(session: AsyncSession = Depends(db_helper.session_getter)):
     query = select(ProviderExchangeRate).options(
         joinedload(ProviderExchangeRate.provider),
@@ -76,7 +78,7 @@ async def get_all_exchange_rates(session: AsyncSession = Depends(db_helper.sessi
     return [ExchangeRateResponse.model_validate(rate) for rate in rates]
 
 
-@router.get("/transfer-rules", response_model=List[List[Any]])
+@router.get("/transfer-rules", response_model=List[List[Any]], tags=["Provider Objects"])
 async def get_all_transfer_rules(session: AsyncSession = Depends(db_helper.session_getter)):
     query = select(TransferRule).options(
         joinedload(TransferRule.send_country),
