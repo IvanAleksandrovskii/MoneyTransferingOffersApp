@@ -137,6 +137,9 @@ async def get_transfer_rules_full_filled_info(
                 except Exception as e:
                     logger.error(f"Error converting currency for rule {rule.id}: {str(e)}")
                     continue
+            else:
+                logger.info(f"No conversion needed. Original currency matches transfer currency.")
+                conversion_path = [from_currency.abbreviation]
 
             logger.info(f"Converted amount: {converted_amount} {rule.transfer_currency.abbreviation}")
             logger.info(f"Exchange rate: {exchange_rate}")
@@ -149,7 +152,7 @@ async def get_transfer_rules_full_filled_info(
             if rule.min_transfer_amount <= converted_amount <= (rule.max_transfer_amount or float('inf')):
                 rule_detail = TransferRuleDetails(
                     id=rule.id,
-                    provider=ProviderResponse(id=rule.provider.id, name=rule.provider.name),
+                    provider=ProviderResponse(id=rule.provider.id, name=rule.provider.name, url=rule.provider.url),
                     transfer_method=rule.transfer_method,
                     estimated_transfer_time=rule.estimated_transfer_time,
                     required_documents=rule.required_documents,
@@ -174,7 +177,8 @@ async def get_transfer_rules_full_filled_info(
             else:
                 logger.info(
                     f"Rule {rule.id} is not valid. Amount {converted_amount} is out of range "
-                    f"[{rule.min_transfer_amount}, {rule.max_transfer_amount or 'inf'}]")
+                    f"[{rule.min_transfer_amount}, {rule.max_transfer_amount or 'inf'}]"
+                )
         except Exception as e:
             logger.error(f"Error processing rule {rule.id}: {str(e)}")
             continue
