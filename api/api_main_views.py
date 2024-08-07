@@ -18,6 +18,8 @@ from core.services.get_object import get_object_by_id
 
 router = APIRouter()
 
+# TODO: fix money roundings
+
 
 @router.post("/transfer-rules-by-countries", response_model=List[List[Any]])
 async def get_transfer_rules_by_countries(
