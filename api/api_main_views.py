@@ -1,4 +1,3 @@
-from decimal import Decimal
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -19,8 +18,6 @@ from core.services.get_object import get_object_by_id
 
 router = APIRouter()
 
-
-# TODO: Add value rounding to get_transfer_rules_full_filled_info for input amount (!)
 
 @router.post("/transfer-rules-by-countries", response_model=List[DetailedTransferRuleResponse])
 async def get_transfer_rules_by_countries(
@@ -106,9 +103,9 @@ async def get_transfer_rules_full_filled_info(
         try:
             logger.info(f"Checking rule {rule.id}: {rule.provider.name}, {rule.transfer_currency.abbreviation}")
 
-            original_amount = Decimal(str(transfer.amount))
+            original_amount = round(transfer.amount, 2)  # Round the input amount to 2 decimal places
             converted_amount = original_amount
-            exchange_rate = Decimal('1.0')
+            exchange_rate = 1.0  # Default exchange rate to 1.0 if no conversion is needed
             conversion_path = []
 
             if rule.transfer_currency.id != from_currency.id:
@@ -122,16 +119,21 @@ async def get_transfer_rules_full_filled_info(
                     exchange_rate_obj = exchange_rate_result.scalar_one_or_none()
 
                     if exchange_rate_obj:
-                        exchange_rate = Decimal(str(exchange_rate_obj.rate))
-                        converted_amount = original_amount * exchange_rate
+                        exchange_rate = exchange_rate_obj.rate
+                        converted_amount = round(original_amount * exchange_rate,
+                                                 2)  # Round the converted amount to 2 decimal places
                         conversion_path = [from_currency.abbreviation, rule.transfer_currency.abbreviation]
                     else:
                         logger.info(f"Direct conversion not found, trying through USD")
                         usd_currency = await get_currency_by_abbreviation(session, "USD")
-                        amount_in_usd = await convert_currency(session, float(original_amount), from_currency, usd_currency, rule.provider)
-                        converted_amount = await convert_currency(session, amount_in_usd, usd_currency, rule.transfer_currency, rule.provider)
+                        amount_in_usd = await convert_currency(session, original_amount, from_currency, usd_currency,
+                                                               rule.provider)
+                        converted_amount = await convert_currency(session, amount_in_usd, usd_currency,
+                                                                  rule.transfer_currency, rule.provider)
+                        converted_amount = round(converted_amount, 2)  # Round the converted amount to 2 decimal places
                         conversion_path = [from_currency.abbreviation, "USD", rule.transfer_currency.abbreviation]
-                        exchange_rate = Decimal(str(converted_amount)) / original_amount
+                        exchange_rate = round(converted_amount / original_amount,
+                                              3)  # Round the exchange rate to 3 decimal places
                 except Exception as e:
                     logger.error(f"Error converting currency for rule {rule.id}: {str(e)}")
                     continue
@@ -140,38 +142,39 @@ async def get_transfer_rules_full_filled_info(
             logger.info(f"Exchange rate: {exchange_rate}")
             logger.info(f"Conversion path: {' -> '.join(conversion_path)}")
 
-            converted_amount = Decimal(str(converted_amount))
-            fee_percentage = Decimal(str(rule.fee_percentage))
-            transfer_fee = converted_amount * (fee_percentage / Decimal('100'))
-            amount_received = converted_amount - transfer_fee
+            fee_percentage = rule.fee_percentage / 100
+            transfer_fee = round(converted_amount * fee_percentage, 2)  # Round the transfer fee to 2 decimal places
+            amount_received = round(converted_amount - transfer_fee, 2)  # Round the amount received to 2 decimal places
 
-            if Decimal(str(rule.min_transfer_amount)) <= converted_amount <= (Decimal(str(rule.max_transfer_amount)) if rule.max_transfer_amount is not None else Decimal('Infinity')):
+            if rule.min_transfer_amount <= converted_amount <= (rule.max_transfer_amount or float('inf')):
                 rule_detail = TransferRuleDetails(
                     id=rule.id,
                     provider=ProviderResponse(id=rule.provider.id, name=rule.provider.name),
                     transfer_method=rule.transfer_method,
                     estimated_transfer_time=rule.estimated_transfer_time,
                     required_documents=rule.required_documents,
-                    original_amount=float(original_amount),
-                    converted_amount=float(converted_amount),
+                    original_amount=original_amount,
+                    converted_amount=converted_amount,
                     transfer_currency=CurrencyResponse(
                         id=rule.transfer_currency.id,
                         name=rule.transfer_currency.name,
                         symbol=rule.transfer_currency.symbol,
                         abbreviation=rule.transfer_currency.abbreviation
                     ),
-                    amount_received=float(amount_received),
-                    transfer_fee=float(transfer_fee),
-                    transfer_fee_percentage=float(fee_percentage),
-                    min_transfer_amount=float(rule.min_transfer_amount),
-                    max_transfer_amount=rule.max_transfer_amount if rule.max_transfer_amount is not None else None,
-                    exchange_rate=float(exchange_rate),
+                    amount_received=amount_received,
+                    transfer_fee=transfer_fee,
+                    transfer_fee_percentage=rule.fee_percentage,
+                    min_transfer_amount=rule.min_transfer_amount,
+                    max_transfer_amount=rule.max_transfer_amount,
+                    exchange_rate=exchange_rate,
                     conversion_path=conversion_path
                 )
                 rule_details.append(rule_detail)
                 logger.info(f"Rule {rule.id} is valid")
             else:
-                logger.info(f"Rule {rule.id} is not valid. Amount {converted_amount} is out of range [{rule.min_transfer_amount}, {rule.max_transfer_amount or 'inf'}]")
+                logger.info(
+                    f"Rule {rule.id} is not valid. Amount {converted_amount} is out of range "
+                    f"[{rule.min_transfer_amount}, {rule.max_transfer_amount or 'inf'}]")
         except Exception as e:
             logger.error(f"Error processing rule {rule.id}: {str(e)}")
             continue
