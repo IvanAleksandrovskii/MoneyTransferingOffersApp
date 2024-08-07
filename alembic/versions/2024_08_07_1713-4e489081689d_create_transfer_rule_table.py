@@ -1,8 +1,8 @@
-"""create transfer rules table
+"""create transfer rule table
 
-Revision ID: 182d71148304
-Revises: 51fffa618e12
-Create Date: 2024-08-06 01:37:57.283765
+Revision ID: 4e489081689d
+Revises: a3979a33c15f
+Create Date: 2024-08-07 17:13:36.379667
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '182d71148304'
-down_revision: Union[str, None] = '51fffa618e12'
+revision: str = '4e489081689d'
+down_revision: Union[str, None] = 'a3979a33c15f'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -33,7 +33,8 @@ def upgrade() -> None:
     sa.Column('required_documents', sa.String(), nullable=True),
     sa.Column('id', sa.UUID(), server_default=sa.text('gen_random_uuid()'), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
-    sa.ForeignKeyConstraint(['provider_id'], ['transfer_providers.id'], name=op.f('fk_transfer_rules_provider_id_transfer_providers')),
+    sa.CheckConstraint('min_transfer_amount <= max_transfer_amount', name=op.f('ck_transfer_rules_check_min_max_transfer_amount')),
+    sa.ForeignKeyConstraint(['provider_id'], ['transfer_providers.id'], name=op.f('fk_transfer_rules_provider_id_transfer_providers'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['receive_country_id'], ['countries.id'], name=op.f('fk_transfer_rules_receive_country_id_countries')),
     sa.ForeignKeyConstraint(['send_country_id'], ['countries.id'], name=op.f('fk_transfer_rules_send_country_id_countries')),
     sa.ForeignKeyConstraint(['transfer_currency_id'], ['currencies.id'], name=op.f('fk_transfer_rules_transfer_currency_id_currencies')),

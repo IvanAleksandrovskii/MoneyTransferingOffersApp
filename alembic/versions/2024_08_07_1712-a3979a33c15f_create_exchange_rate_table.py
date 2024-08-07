@@ -1,8 +1,8 @@
-"""create providers exchange rate table
+"""create exchange rate table
 
-Revision ID: 51fffa618e12
-Revises: a1bd11ba15f4
-Create Date: 2024-08-06 01:35:22.300482
+Revision ID: a3979a33c15f
+Revises: cdff2fe4fe4a
+Create Date: 2024-08-07 17:12:48.559783
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '51fffa618e12'
-down_revision: Union[str, None] = 'a1bd11ba15f4'
+revision: str = 'a3979a33c15f'
+down_revision: Union[str, None] = 'cdff2fe4fe4a'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -25,11 +25,11 @@ def upgrade() -> None:
     sa.Column('from_currency_id', sa.UUID(), nullable=False),
     sa.Column('to_currency_id', sa.UUID(), nullable=False),
     sa.Column('rate', sa.Float(), nullable=False),
-    sa.Column('last_updated', sa.DateTime(), nullable=False),
+    sa.Column('last_updated', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('id', sa.UUID(), server_default=sa.text('gen_random_uuid()'), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['from_currency_id'], ['currencies.id'], name=op.f('fk_provider_exchange_rates_from_currency_id_currencies')),
-    sa.ForeignKeyConstraint(['provider_id'], ['transfer_providers.id'], name=op.f('fk_provider_exchange_rates_provider_id_transfer_providers')),
+    sa.ForeignKeyConstraint(['provider_id'], ['transfer_providers.id'], name=op.f('fk_provider_exchange_rates_provider_id_transfer_providers'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['to_currency_id'], ['currencies.id'], name=op.f('fk_provider_exchange_rates_to_currency_id_currencies')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_provider_exchange_rates')),
     sa.UniqueConstraint('provider_id', 'from_currency_id', 'to_currency_id', name='uq_provider_currency_pair')
