@@ -20,6 +20,8 @@ from core.services.get_object import get_object_by_id
 router = APIRouter()
 
 
+# TODO: Add value rounding to get_transfer_rules_full_filled_info for input amount (!)
+
 @router.post("/transfer-rules-by-countries", response_model=List[DetailedTransferRuleResponse])
 async def get_transfer_rules_by_countries(
         transfer: TransferRuleRequest,
