@@ -6,13 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from core import logger
-from core.models import db_helper, Currency, Country, TransferRule, ProviderExchangeRate
+from core.models import db_helper, Currency, Country, TransferRule
 from core.schemas import (
     TransferRuleRequest, TransferRuleFullRequest, OptimizedTransferRuleResponse,
-    TransferRuleDetails, DetailedTransferRuleResponse, CurrencyResponse, CountryResponse, ProviderResponse,
+    TransferRuleDetails, DetailedTransferRuleResponse, CurrencyResponse, CountryResponse,
+    ProviderResponse,
 )
-from core.services import convert_currency
-from core.services import get_currency_by_abbreviation
+from core.services import CurrencyConversionService
 from core.services import get_object_by_id
 
 
@@ -66,17 +66,20 @@ async def get_transfer_rules_full_filled_info(
         transfer: TransferRuleFullRequest,
         session: AsyncSession = Depends(db_helper.session_getter)
 ):
+    # Retrieve send and receive countries
     send_country = await get_object_by_id(session, Country, transfer.send_country)
     receive_country = await get_object_by_id(session, Country, transfer.receive_country)
     if not send_country or not receive_country:
         raise HTTPException(status_code=404, detail="Country not found")
 
+    # Retrieve the source currency
     from_currency = await get_object_by_id(session, Currency, transfer.from_currency)
     if not from_currency:
         raise HTTPException(status_code=404, detail="From currency not found")
 
     logger.info(f"Searching for rules: from {send_country.name} to {receive_country.name}, amount: {transfer.amount} {from_currency.abbreviation}")
 
+    # Construct query to fetch transfer rules
     query = (
         select(TransferRule)
         .options(
@@ -91,6 +94,7 @@ async def get_transfer_rules_full_filled_info(
         )
     )
 
+    # Execute query and fetch results
     result = await session.execute(query)
     rules = result.unique().scalars().all()
 
@@ -103,53 +107,24 @@ async def get_transfer_rules_full_filled_info(
         try:
             logger.info(f"Checking rule {rule.id}: {rule.provider.name}, {rule.transfer_currency.abbreviation}")
 
-            original_amount = round(transfer.amount, 2)  # Round the input amount to 2 decimal places
-            converted_amount = original_amount
-            exchange_rate = 1.0  # Default exchange rate to 1.0 if no conversion is needed
-            conversion_path = []
-
-            if rule.transfer_currency.id != from_currency.id:
-                try:
-                    exchange_rate_query = select(ProviderExchangeRate).filter(
-                        ProviderExchangeRate.provider_id == rule.provider_id,
-                        ProviderExchangeRate.from_currency_id == from_currency.id,
-                        ProviderExchangeRate.to_currency_id == rule.transfer_currency_id
-                    )
-                    exchange_rate_result = await session.execute(exchange_rate_query)
-                    exchange_rate_obj = exchange_rate_result.scalar_one_or_none()
-
-                    if exchange_rate_obj:
-                        exchange_rate = exchange_rate_obj.rate
-                        converted_amount = round(original_amount * exchange_rate,
-                                                 2)  # Round the converted amount to 2 decimal places
-                        conversion_path = [from_currency.abbreviation, rule.transfer_currency.abbreviation]
-                    else:
-                        logger.info(f"Direct conversion not found, trying through USD")
-                        usd_currency = await get_currency_by_abbreviation(session, "USD")
-                        amount_in_usd = await convert_currency(session, original_amount, from_currency, usd_currency,
-                                                               rule.provider)
-                        converted_amount = await convert_currency(session, amount_in_usd, usd_currency,
-                                                                  rule.transfer_currency, rule.provider)
-                        converted_amount = round(converted_amount, 2)  # Round the converted amount to 2 decimal places
-                        conversion_path = [from_currency.abbreviation, "USD", rule.transfer_currency.abbreviation]
-                        exchange_rate = round(converted_amount / original_amount,
-                                              3)  # Round the exchange rate to 3 decimal places
-                except Exception as e:
-                    logger.error(f"Error converting currency for rule {rule.id}: {str(e)}")
-                    continue
-            else:
-                logger.info(f"No conversion needed. Original currency matches transfer currency.")
-                conversion_path = [from_currency.abbreviation]
+            # Perform currency conversion
+            original_amount = transfer.amount
+            converted_amount, exchange_rate, conversion_path = await CurrencyConversionService.convert_amount(
+                session, original_amount, from_currency, rule.transfer_currency, rule.provider
+            )
 
             logger.info(f"Converted amount: {converted_amount} {rule.transfer_currency.abbreviation}")
             logger.info(f"Exchange rate: {exchange_rate}")
             logger.info(f"Conversion path: {' -> '.join(conversion_path)}")
 
+            # Calculate fees and final amount
             fee_percentage = rule.fee_percentage / 100
-            transfer_fee = round(converted_amount * fee_percentage, 2)  # Round the transfer fee to 2 decimal places
-            amount_received = round(converted_amount - transfer_fee, 2)  # Round the amount received to 2 decimal places
+            transfer_fee = round(converted_amount * fee_percentage, 2)
+            amount_received = round(converted_amount - transfer_fee, 2)
 
+            # Check if the converted amount is within the allowed range
             if rule.min_transfer_amount <= converted_amount <= (rule.max_transfer_amount or float('inf')):
+                # Create TransferRuleDetails object
                 rule_detail = TransferRuleDetails(
                     id=rule.id,
                     provider=ProviderResponse(id=rule.provider.id, name=rule.provider.name, url=rule.provider.url),
@@ -187,6 +162,7 @@ async def get_transfer_rules_full_filled_info(
         logger.warning("No valid rules found after applying amount restrictions")
         raise HTTPException(status_code=404, detail="No valid transfer rules found for the specified parameters")
 
+    # Construct and return the response
     return OptimizedTransferRuleResponse(
         send_country=CountryResponse(
             id=send_country.id,
