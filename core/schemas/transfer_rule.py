@@ -26,6 +26,7 @@ class TransferRuleDetails(BaseResponse):
 class DetailedTransferRuleResponse(BaseResponse):
     provider_name: str
     provider_id: UUID
+    provider_url: str | None  # TODO: str only if nullable is False in the model
     send_country_name: str
     send_country_id: UUID
     receive_country_name: str
@@ -45,6 +46,7 @@ class DetailedTransferRuleResponse(BaseResponse):
             id=obj.id,
             provider_name=obj.provider.name,
             provider_id=obj.provider.id,
+            provider_url=obj.provider.url,  # Added url, don't forget to add a new field here next time too
             send_country_name=obj.send_country.name,
             send_country_id=obj.send_country.id,
             receive_country_name=obj.receive_country.name,

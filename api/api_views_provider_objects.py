@@ -25,7 +25,7 @@ async def get_providers(session: AsyncSession = Depends(db_helper.session_getter
     result = await session.execute(query)
     providers = result.unique().scalars().all()
 
-    return [ProviderResponse.model_validate(provider) for provider in providers]
+    return [ProviderResponse(id=provider.id, name=provider.name, url=provider.url) for provider in providers]
 
 
 @router.get("/provider/{provider_id}/rules", response_model=List[DetailedTransferRuleResponse])
@@ -75,7 +75,8 @@ async def get_provider_exchange_rates(
             id=rate.id,
             provider=ProviderResponse(
                 id=provider.id,
-                name=provider.name
+                name=provider.name,
+                url=provider.url  # Added url, don't forget to add a new field here next time too
             ),
             from_currency=CurrencyResponse.model_validate(rate.from_currency),
             to_currency=CurrencyResponse.model_validate(rate.to_currency),
@@ -95,7 +96,18 @@ async def get_all_exchange_rates(session: AsyncSession = Depends(db_helper.sessi
     )
     result = await session.execute(query)
     rates = result.scalars().all()
-    return [ExchangeRateResponse.model_validate(rate) for rate in rates]
+    return [ExchangeRateResponse(
+        id=rate.id,
+        provider=ProviderResponse(
+            id=rate.provider.id,
+            name=rate.provider.name,
+            url=rate.provider.url  # Added url, don't forget to add a new field here next time too
+        ),
+        from_currency=CurrencyResponse.model_validate(rate.from_currency),
+        to_currency=CurrencyResponse.model_validate(rate.to_currency),
+        rate=rate.rate,
+        last_updated=rate.last_updated
+    ) for rate in rates]
 
 
 @router.get("/transfer-rules", response_model=List[DetailedTransferRuleResponse], tags=["Provider Objects"])

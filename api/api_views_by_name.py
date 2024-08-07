@@ -8,7 +8,7 @@ from core import logger
 from core.models import db_helper, Currency, Country, TransferProvider, ProviderExchangeRate, TransferRule
 from core.schemas import (
     CurrencyResponse, CountryResponse,
-    ExchangeRateResponse, DetailedTransferRuleResponse, TransferRuleRequestByName
+    ExchangeRateResponse, DetailedTransferRuleResponse, TransferRuleRequestByName, ProviderResponse
 )
 from core.services.get_object import get_object_by_name
 
@@ -100,7 +100,18 @@ async def get_provider_exchange_rates_by_name(
     result = await session.execute(query)
     rates = result.unique().scalars().all()
 
-    return [ExchangeRateResponse.model_validate(rate) for rate in rates]
+    return [ExchangeRateResponse(
+        id=rate.id,
+        provider=ProviderResponse(
+            id=rate.provider.id,
+            name=rate.provider.name,
+            url=rate.provider.url  # Added url, don't forget to add a new field here next time too
+        ),
+        from_currency=CurrencyResponse.model_validate(rate.from_currency),
+        to_currency=CurrencyResponse.model_validate(rate.to_currency),
+        rate=rate.rate,
+        last_updated=rate.last_updated
+    ) for rate in rates]
 
 
 @router.get("/currency/{currency_name}", response_model=CurrencyResponse, tags=["By Name"])

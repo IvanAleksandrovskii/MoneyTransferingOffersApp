@@ -32,7 +32,7 @@ class CurrencyAdmin(ModelView, model=Currency):
 
 
 class TransferProviderAdmin(ModelView, model=TransferProvider):
-    column_list = [TransferProvider.name, TransferProvider.id, TransferProvider.is_active]
+    column_list = [TransferProvider.name, TransferProvider.id, TransferProvider.is_active, TransferProvider.url]
     form_excluded_columns = ['exchange_rates', 'transfer_rules']
     category = "Providers"  # Done todo double check
 
