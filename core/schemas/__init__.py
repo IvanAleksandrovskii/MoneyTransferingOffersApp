@@ -1,14 +1,13 @@
-__all__ = ["TransferRuleResponse", "TransferRuleRequest", "ProviderResponse", "CurrencyResponse",
+__all__ = ["TransferRuleRequest", "ProviderResponse", "CurrencyResponse",
            "CountryResponse", "ExchangeRateResponse", "TransferRuleFullRequest",
-           "OptimizedTransferRuleResponse", "TransferRuleDetails"]
+           "OptimizedTransferRuleResponse", "TransferRuleDetails", "GenericObjectResponse",
+           "DetailedTransferRuleResponse", "TransferRuleRequestByName"]
 
-from .request_response import TransferRuleResponse
-from .request_response import TransferRuleRequest
-from .request_response import ProviderResponse
-from .request_response import CurrencyResponse
-from .request_response import CountryResponse
-from .request_response import ExchangeRateResponse
+from .country import CountryResponse
+from .currency import CurrencyResponse
+from .provider import ProviderResponse
+from .transfer_rule import TransferRuleDetails, DetailedTransferRuleResponse
+from .exchange_rate import ExchangeRateResponse
+from .request import TransferRuleRequest, TransferRuleRequestByName, TransferRuleFullRequest
+from .response import OptimizedTransferRuleResponse
 from .generic_obj_response import GenericObjectResponse
-from .request_response import TransferRuleFullRequest
-from .request_response import OptimizedTransferRuleResponse
-from .request_response import TransferRuleDetails
