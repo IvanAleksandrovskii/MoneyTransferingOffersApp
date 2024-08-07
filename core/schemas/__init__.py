@@ -8,6 +8,6 @@ from .currency import CurrencyResponse
 from .provider import ProviderResponse
 from .transfer_rule import TransferRuleDetails, DetailedTransferRuleResponse
 from .exchange_rate import ExchangeRateResponse
-from .request import TransferRuleRequest, TransferRuleRequestByName, TransferRuleFullRequest
-from .response import OptimizedTransferRuleResponse
+from .transfer_request import TransferRuleRequest, TransferRuleRequestByName, TransferRuleFullRequest
+from .transfer_response import OptimizedTransferRuleResponse
 from .generic_obj_response import GenericObjectResponse
