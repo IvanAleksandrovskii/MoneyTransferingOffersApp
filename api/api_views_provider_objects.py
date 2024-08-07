@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
-from core.services.get_object import get_object_by_id
+from core.services import get_object_by_id
 from core.models import db_helper, TransferProvider, TransferRule, ProviderExchangeRate
 from core.schemas import ProviderResponse, ExchangeRateResponse, CurrencyResponse, DetailedTransferRuleResponse
 

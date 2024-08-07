@@ -11,9 +11,9 @@ from core.schemas import (
     TransferRuleRequest, TransferRuleFullRequest, OptimizedTransferRuleResponse,
     TransferRuleDetails, DetailedTransferRuleResponse, CurrencyResponse, CountryResponse, ProviderResponse,
 )
-from core.services.convert_currency import convert_currency
-from core.services.get_currency_by_abbreviation import get_currency_by_abbreviation
-from core.services.get_object import get_object_by_id
+from core.services import convert_currency
+from core.services import get_currency_by_abbreviation
+from core.services import get_object_by_id
 
 
 router = APIRouter()

@@ -10,7 +10,7 @@ from core.schemas import (
     CurrencyResponse, CountryResponse,
     ExchangeRateResponse, DetailedTransferRuleResponse, TransferRuleRequestByName, ProviderResponse
 )
-from core.services.get_object import get_object_by_name
+from core.services import get_object_by_name
 
 
 router = APIRouter()

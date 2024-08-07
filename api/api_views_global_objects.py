@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from core.services.get_object import get_object_by_id
+from core.services import get_object_by_id
 from core.models import db_helper, Currency, Country
 from core.schemas import CurrencyResponse, CountryResponse
 
