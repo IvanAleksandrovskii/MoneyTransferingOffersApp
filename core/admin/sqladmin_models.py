@@ -68,7 +68,11 @@ class ProviderExchangeRateAdmin(ModelView, model=ProviderExchangeRate):
         ProviderExchangeRate.from_currency_id,
         ProviderExchangeRate.to_currency_id
     ]
+    form_excluded_columns = [
+        "last_updated"
+    ]
     column_formatters = {
+        "last_updated": lambda m, a: m.last_updated.strftime("%Y-%m-%d %H:%M:%S") if m.last_updated else "",
         "formatted_exchange_rate": format_exchange_rate
     }
     name = "Provider Exchange Rate"

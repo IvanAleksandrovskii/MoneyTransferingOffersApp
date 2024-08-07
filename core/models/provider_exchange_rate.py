@@ -20,10 +20,9 @@ class ProviderExchangeRate(Base):
 
     rate: Mapped[float] = mapped_column(Float, nullable=False)
     last_updated: Mapped[datetime] = mapped_column(
-        DateTime,
-        nullable=False,
+        DateTime(timezone=True),
         server_default=func.now(),
-        onupdate=func.now()
+        nullable=False
     )
 
     __table_args__ = (
