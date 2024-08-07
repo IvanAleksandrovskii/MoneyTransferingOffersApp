@@ -154,9 +154,13 @@ async def get_transfer_rules_full_filled_info(
                     f"Rule {rule.id} is not valid. Amount {converted_amount} is out of range "
                     f"[{rule.min_transfer_amount}, {rule.max_transfer_amount or 'inf'}]"
                 )
+        except HTTPException as e:
+            if e.status_code == 400:  # This is the status code we set for failed conversions
+                logger.warning(f"Conversion failed for rule {rule.id}: {str(e)}")
+            else:
+                logger.error(f"Error processing rule {rule.id}: {str(e)}")
         except Exception as e:
-            logger.error(f"Error processing rule {rule.id}: {str(e)}")
-            continue
+            logger.error(f"Unexpected error processing rule {rule.id}: {str(e)}")
 
     if not rule_details:
         logger.warning("No valid rules found after applying amount restrictions")
