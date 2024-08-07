@@ -7,7 +7,6 @@ from core.models import Base
 
 
 class Country(Base):
-    # TODO: with my naming logic still need to write down the name if it ends with "ies" in multiple form
     __tablename__ = "countries"
 
     name: Mapped[str] = mapped_column(String, nullable=False)
