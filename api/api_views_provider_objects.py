@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, APIRouter
@@ -8,8 +8,7 @@ from sqlalchemy.orm import selectinload, joinedload
 
 from core.services.get_object import get_object_by_id
 from core.models import db_helper, TransferProvider, TransferRule, ProviderExchangeRate
-from core.schemas import ProviderResponse, ExchangeRateResponse, CurrencyResponse
-
+from core.schemas import ProviderResponse, ExchangeRateResponse, CurrencyResponse, DetailedTransferRuleResponse
 
 router = APIRouter()
 
@@ -27,6 +26,27 @@ async def get_providers(session: AsyncSession = Depends(db_helper.session_getter
     providers = result.unique().scalars().all()
 
     return [ProviderResponse.model_validate(provider) for provider in providers]
+
+
+@router.get("/provider/{provider_id}/rules", response_model=List[DetailedTransferRuleResponse])
+async def get_provider_rules_by_id(
+        provider_id: UUID,
+        session: AsyncSession = Depends(db_helper.session_getter)
+):
+    provider = await get_object_by_id(session, TransferProvider, provider_id)
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider not found")
+
+    query = select(TransferRule).filter(TransferRule.provider_id == provider.id).options(
+        joinedload(TransferRule.send_country),
+        joinedload(TransferRule.receive_country),
+        joinedload(TransferRule.provider),
+        joinedload(TransferRule.transfer_currency)
+    )
+    result = await session.execute(query)
+    rules = result.scalars().all()
+
+    return [DetailedTransferRuleResponse.model_validate(rule) for rule in rules]
 
 
 @router.get("/provider/{provider_id}/exchange-rates", response_model=List[ExchangeRateResponse], tags=["Provider Objects"])
@@ -78,7 +98,7 @@ async def get_all_exchange_rates(session: AsyncSession = Depends(db_helper.sessi
     return [ExchangeRateResponse.model_validate(rate) for rate in rates]
 
 
-@router.get("/transfer-rules", response_model=List[List[Any]], tags=["Provider Objects"])
+@router.get("/transfer-rules", response_model=List[DetailedTransferRuleResponse], tags=["Provider Objects"])
 async def get_all_transfer_rules(session: AsyncSession = Depends(db_helper.session_getter)):
     query = select(TransferRule).options(
         joinedload(TransferRule.send_country),
@@ -89,14 +109,4 @@ async def get_all_transfer_rules(session: AsyncSession = Depends(db_helper.sessi
     result = await session.execute(query)
     rules = result.unique().scalars().all()
 
-    return [
-        [
-            rule.provider.name if rule.provider else "Unknown",
-            rule.send_country.name if rule.send_country else "Unknown",
-            rule.receive_country.name if rule.receive_country else "Unknown",
-            rule.transfer_currency.abbreviation if rule.transfer_currency else "Unknown",
-            rule.min_transfer_amount,
-            rule.max_transfer_amount
-        ]
-        for rule in rules
-    ]
+    return [DetailedTransferRuleResponse.model_validate(rule) for rule in rules]
