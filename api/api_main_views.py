@@ -19,6 +19,8 @@ from core.services import get_object_by_id
 router = APIRouter()
 
 
+# TODO: Currency-USD-currency transfer options search not working NEED TO FIX
+
 @router.post("/transfer-rules-by-countries", response_model=List[DetailedTransferRuleResponse])
 async def get_transfer_rules_by_countries(
         transfer: TransferRuleRequest,

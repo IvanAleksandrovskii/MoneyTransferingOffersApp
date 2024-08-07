@@ -7,6 +7,8 @@ from core.services import convert_currency
 from core.services import get_currency_by_abbreviation
 
 
+# TODO: Currency-USD-currency transfer options search not working NEED TO FIX
+
 class CurrencyConversionService:
     @staticmethod
     async def convert_amount(
