@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException
 
 from core import logger
 from core.models import Currency, TransferProvider
@@ -15,51 +16,46 @@ class CurrencyConversionService:
             to_currency: Currency,
             provider: TransferProvider
     ) -> tuple[float, float, list[str]]:
-        """
-        Convert an amount from one currency to another using the specified provider's exchange rates.
-        Troughs an exception if the direct conversion fails, uses currency-USD-currency for that case.
-        Args:
-            session (AsyncSession): The database session.
-            amount (float): The amount to convert.
-            from_currency (Currency): The source currency.
-            to_currency (Currency): The target currency.
-            provider (TransferProvider): The transfer provider to use for conversion.
-
-        Returns:
-            tuple: A tuple containing:
-                - converted_amount (float): The amount in the target currency.
-                - exchange_rate (float): The exchange rate used for conversion.
-                - conversion_path (list[str]): The path of currency conversions.
-        """
-        # Round the original amount to 2 decimal places
         original_amount = round(amount, 2)
         converted_amount = original_amount
         exchange_rate = 1.0
         conversion_path = []
 
-        # Only proceed with conversion if currencies are different
-        if to_currency.id != from_currency.id:
-            try:
-                # Attempt direct conversion between currencies
-                converted_amount = await convert_currency(session, original_amount, from_currency, to_currency,
-                                                          provider)
-                converted_amount = round(converted_amount, 2)
-                exchange_rate = round(converted_amount / original_amount, 3)
-                conversion_path = [from_currency.abbreviation, to_currency.abbreviation]
-            except Exception as e:
-                logger.exception("Failed to convert currency: %s", e)
+        if to_currency.id == from_currency.id:
+            logger.info(f"No conversion needed: {from_currency.abbreviation} to {to_currency.abbreviation}")
+            return converted_amount, exchange_rate, [from_currency.abbreviation]
 
-                # If direct conversion fails, try conversion through USD
-                usd_currency = await get_currency_by_abbreviation(session, "USD")
+        try:
+            logger.info(f"Attempting direct conversion: {from_currency.abbreviation} to {to_currency.abbreviation}")
+            converted_amount = await convert_currency(session, original_amount, from_currency, to_currency, provider)
+            converted_amount = round(converted_amount, 2)
+            exchange_rate = round(converted_amount / original_amount, 4)
+            conversion_path = [from_currency.abbreviation, to_currency.abbreviation]
+            logger.info(
+                f"Direct conversion successful: {original_amount} {from_currency.abbreviation} = {converted_amount} {to_currency.abbreviation}")
+        except HTTPException as e:
+            if e.status_code == 404:  # Exchange rate not found
+                logger.warning(f"Direct conversion failed. Attempting conversion through USD.")
+                try:
+                    usd_currency = await get_currency_by_abbreviation(session, "USD")
 
-                # Convert from source currency to USD
-                amount_in_usd = await convert_currency(session, original_amount, from_currency, usd_currency, provider)
+                    logger.info(f"Converting {from_currency.abbreviation} to USD")
+                    amount_in_usd = await convert_currency(session, original_amount, from_currency, usd_currency,
+                                                           provider)
 
-                # Convert from USD to target currency
-                converted_amount = await convert_currency(session, amount_in_usd, usd_currency, to_currency, provider)
+                    logger.info(f"Converting USD to {to_currency.abbreviation}")
+                    converted_amount = await convert_currency(session, amount_in_usd, usd_currency, to_currency,
+                                                              provider)
 
-                converted_amount = round(converted_amount, 2)
-                exchange_rate = round(converted_amount / original_amount, 3)
-                conversion_path = [from_currency.abbreviation, "USD", to_currency.abbreviation]
+                    converted_amount = round(converted_amount, 2)
+                    exchange_rate = round(converted_amount / original_amount, 4)
+                    conversion_path = [from_currency.abbreviation, "USD", to_currency.abbreviation]
+                    logger.info(
+                        f"Conversion through USD successful: {original_amount} {from_currency.abbreviation} = {converted_amount} {to_currency.abbreviation}")
+                except HTTPException as usd_error:
+                    logger.error(f"Conversion through USD failed: {str(usd_error)}")
+                    raise HTTPException(status_code=400, detail="Unable to perform currency conversion") from usd_error
+            else:
+                raise
 
         return converted_amount, exchange_rate, conversion_path
