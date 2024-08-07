@@ -10,7 +10,7 @@ from sqladmin import Admin
 from core import settings
 from core import logger
 from core.models import db_helper
-from api import api_router, api_router2
+from api import api_router
 
 from core.admin import *
 
@@ -40,8 +40,7 @@ admin.add_view(ProviderExchangeRateAdmin)
 admin.add_view(TransferRuleAdmin)
 
 main_app.include_router(router=api_router, prefix=settings.api_prefix.prefix)
-main_app.include_router(router=api_router2, prefix=settings.api_prefix.extended)
-x
+
 
 if __name__ == "__main__":
     uvicorn.run("main:main_app", host=settings.run.host, port=settings.run.port, reload=settings.run.debug)
