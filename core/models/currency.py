@@ -4,6 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.models import Base
 
 
+# TODO: make currency name unique too
 class Currency(Base):
     # TODO: with my naming logic still need to write down the name if it ends with "ies" in multiple form
     __tablename__ = "currencies"
