@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from pydantic import BaseModel, UUID4, ConfigDict
-from typing import List, Optional, Any, Union
+from typing import List, Optional, Union
 from datetime import datetime
 
 
@@ -38,7 +38,7 @@ class TransferRuleResponse(BaseModel):
     estimated_transfer_time: Optional[str]
     required_documents: Optional[str]
 
-    # TODO: New fields added (!)
+    # TODO: New fields added (!), still need to improve
     original_amount: float
     original_currency: CurrencyResponse
     converted_amount: float
@@ -73,13 +73,6 @@ class TransferRuleFullRequest(BaseModel):
     receive_country: Union[str, UUID]
     from_currency: Union[str, UUID]
     amount: float
-
-
-class GenericObjectResponse(BaseModel):
-    object_type: str
-    data: dict[str, Any]
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class TransferRuleDetails(BaseModel):
