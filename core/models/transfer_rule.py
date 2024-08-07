@@ -1,10 +1,10 @@
 from typing import Optional
 import uuid
 
-from sqlalchemy import ForeignKey, Float, String, Index, CheckConstraint, select
-from sqlalchemy.orm import Mapped, mapped_column, relationship, joinedload
+from sqlalchemy import ForeignKey, Float, String, Index, CheckConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from core.models import Base, db_helper
+from core.models import Base
 from core.models.country import Country
 from core.models.currency import Currency
 from core.models.transfer_provider import TransferProvider
@@ -19,7 +19,8 @@ class TransferRule(Base):
     receive_country_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("countries.id"), nullable=False)
     receive_country: Mapped[Country] = relationship("Country", foreign_keys=[receive_country_id], lazy="joined")
 
-    provider_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transfer_providers.id"), nullable=False)
+    provider_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transfer_providers.id", ondelete="CASCADE"),
+                                                   nullable=False)
     provider: Mapped[TransferProvider] = relationship("TransferProvider", foreign_keys=[provider_id],
                                                       back_populates="transfer_rules", lazy="joined")
 
@@ -32,7 +33,7 @@ class TransferRule(Base):
     # Info about transfer currency
     transfer_currency_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("currencies.id"), nullable=True)
     transfer_currency: Mapped[Optional[Currency]] = relationship("Currency", foreign_keys=[transfer_currency_id],
-                                                                lazy="joined")
+                                                                 lazy="joined")
 
     # Other fields here... What else can we add here? I mean, if we need it
     # Online / Office

@@ -8,9 +8,10 @@ from core.models import Base, TransferProvider, Currency, db_helper
 
 
 class ProviderExchangeRate(Base):
-    provider_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transfer_providers.id"), nullable=False)
+    provider_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transfer_providers.id", ondelete="CASCADE"),
+                                                   nullable=False)
     provider: Mapped[TransferProvider] = relationship("TransferProvider", back_populates="exchange_rates",
-                                                      cascade='all, delete', lazy='joined')
+                                                      lazy='joined')
     from_currency_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("currencies.id"), nullable=False)
     from_currency: Mapped[Currency] = relationship("Currency", foreign_keys=[from_currency_id], lazy="joined")
 
