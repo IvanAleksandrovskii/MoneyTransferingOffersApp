@@ -26,6 +26,7 @@ class CountryAdmin(ModelView, model=Country):
 
 class CurrencyAdmin(ModelView, model=Currency):
     column_list = [Currency.abbreviation, Currency.id, Currency.is_active, Currency.name, Currency.symbol]
+    form_excluded_columns = ['countries']
     name = "Currency"
     name_plural = "Currencies"
     category = "Global"  # Done todo double check

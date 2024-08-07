@@ -14,7 +14,7 @@ class Currency(Base):
     symbol: Mapped[str] = mapped_column(String, nullable=True)  # Example: $, £, €, UTF-8
     abbreviation: Mapped[str] = mapped_column(String, nullable=False)  # Example: USD, EUR, RUB etc.
 
-    countries = relationship("Country", back_populates="local_currency")
+    countries = relationship("Country", back_populates="local_currency", lazy="dynamic")
 
     __table_args__ = (
         UniqueConstraint('abbreviation', name='uq_currency_abbreviation'),
