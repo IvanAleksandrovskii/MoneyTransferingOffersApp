@@ -1,8 +1,8 @@
-"""create exchange rate table
+"""Create provider exchange rate table
 
-Revision ID: a3979a33c15f
-Revises: cdff2fe4fe4a
-Create Date: 2024-08-07 17:12:48.559783
+Revision ID: 059913fbd00c
+Revises: 0c7530a7ae94
+Create Date: 2024-08-07 17:47:18.833543
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'a3979a33c15f'
-down_revision: Union[str, None] = 'cdff2fe4fe4a'
+revision: str = '059913fbd00c'
+down_revision: Union[str, None] = '0c7530a7ae94'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

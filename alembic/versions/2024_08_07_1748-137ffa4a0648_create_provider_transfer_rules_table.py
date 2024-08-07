@@ -1,8 +1,8 @@
-"""create transfer rule table
+"""Create provider transfer rules table
 
-Revision ID: 4e489081689d
-Revises: a3979a33c15f
-Create Date: 2024-08-07 17:13:36.379667
+Revision ID: 137ffa4a0648
+Revises: 059913fbd00c
+Create Date: 2024-08-07 17:48:06.952843
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '4e489081689d'
-down_revision: Union[str, None] = 'a3979a33c15f'
+revision: str = '137ffa4a0648'
+down_revision: Union[str, None] = '059913fbd00c'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
