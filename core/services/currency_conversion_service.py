@@ -1,13 +1,18 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from fastapi import HTTPException
+from datetime import datetime, timedelta
 
 from core import logger
-from core.models import Currency, TransferProvider
-from core.services.convert_currency import convert_currency
-from core.services.get_currency_by_abbreviation import get_currency_by_abbreviation
+from core.models import Currency, TransferProvider, ProviderExchangeRate
 
 
 class CurrencyConversionService:
+    # TODO: Idea to cache USD currency object to avoid multiple queries
+    _usd_currency_cache = None
+    _usd_cache_time = None
+    _cache_duration = timedelta(hours=1)  # Cache for 1 hour
+
     @staticmethod
     async def convert_amount(
             session: AsyncSession,
@@ -22,65 +27,70 @@ class CurrencyConversionService:
             logger.info(f"No conversion needed: {from_currency.abbreviation} to {to_currency.abbreviation}")
             return original_amount, 1.0, [from_currency.abbreviation]
 
-        try:
-            # Попытка прямой конвертации
-            converted_amount, exchange_rate, conversion_path = await CurrencyConversionService._try_direct_conversion(
-                session, original_amount, from_currency, to_currency, provider
-            )
-            return converted_amount, exchange_rate, conversion_path
-        except HTTPException as e:
-            if e.status_code != 404:
-                raise
-            logger.info(f"Direct conversion failed. Attempting USD conversion.")
+        # Get USD currency, to avoid multiple queries result stores in cache
+        usd_currency = await CurrencyConversionService._get_usd_currency(session)
+        # Fetch all necessary exchange rates in a single query
+        exchange_rates = await CurrencyConversionService._get_exchange_rates(
+            session, provider.id, [from_currency.id, to_currency.id, usd_currency.id]
+        )
 
-        # Попытка конвертации через USD
-        try:
-            converted_amount, exchange_rate, conversion_path = await CurrencyConversionService._try_usd_conversion(
-                session, original_amount, from_currency, to_currency, provider
-            )
+        # Try direct conversion
+        direct_rate = exchange_rates.get((from_currency.id, to_currency.id))
+        if direct_rate:
+            converted_amount = round(original_amount * direct_rate, 2)
+            exchange_rate = round(direct_rate, 4)
+            conversion_path = [from_currency.abbreviation, to_currency.abbreviation]
+            logger.info(
+                f"Direct conversion successful: {original_amount} {from_currency.abbreviation} = {converted_amount} {to_currency.abbreviation}")
             return converted_amount, exchange_rate, conversion_path
-        except HTTPException as e:
-            logger.error(f"Both direct and USD conversion failed: {str(e)}")
-            raise HTTPException(status_code=400, detail="Unable to perform currency conversion")
+
+        # Try USD-middle conversion
+        rate_to_usd = exchange_rates.get((from_currency.id, usd_currency.id))
+        rate_from_usd = exchange_rates.get((usd_currency.id, to_currency.id))
+        if rate_to_usd and rate_from_usd:
+            amount_in_usd = original_amount * rate_to_usd
+            converted_amount = round(amount_in_usd * rate_from_usd, 2)
+            exchange_rate = round(rate_to_usd * rate_from_usd, 4)
+            conversion_path = [from_currency.abbreviation, "USD", to_currency.abbreviation]
+            logger.info(
+                f"USD conversion successful: {original_amount} {from_currency.abbreviation} = {converted_amount} {to_currency.abbreviation}")
+            return converted_amount, exchange_rate, conversion_path
+
+        logger.error(
+            f"Unable to perform currency conversion from {from_currency.abbreviation} to {to_currency.abbreviation}")
+        raise HTTPException(status_code=400, detail="Unable to perform currency conversion")
 
     @staticmethod
-    async def _try_direct_conversion(
-            session: AsyncSession,
-            amount: float,
-            from_currency: Currency,
-            to_currency: Currency,
-            provider: TransferProvider
-    ) -> tuple[float, float, list[str]]:
-        logger.info(f"Attempting direct conversion: {amount} {from_currency.abbreviation} to {to_currency.abbreviation}")
-        converted_amount, rate = await convert_currency(session, amount, from_currency, to_currency, provider)
-        converted_amount = round(converted_amount, 2)
-        exchange_rate = round(rate, 4)
-        conversion_path = [from_currency.abbreviation, to_currency.abbreviation]
-        logger.info(f"Direct conversion successful: {amount} {from_currency.abbreviation} = {converted_amount} {to_currency.abbreviation}")
-        return converted_amount, exchange_rate, conversion_path
+    async def _get_usd_currency(session: AsyncSession) -> Currency:
+        # TODO: Idea to cache USD currency object to avoid multiple queries
+        now = datetime.now()
+        if (CurrencyConversionService._usd_currency_cache is None or
+                CurrencyConversionService._usd_cache_time is None or
+                now - CurrencyConversionService._usd_cache_time > CurrencyConversionService._cache_duration):
+
+            usd_currency = await session.execute(select(Currency).filter(Currency.abbreviation == "USD"))
+            usd_currency = usd_currency.scalar_one_or_none()
+            if not usd_currency:
+                raise HTTPException(status_code=404, detail="USD currency not found in the database")
+
+            CurrencyConversionService._usd_currency_cache = usd_currency
+            CurrencyConversionService._usd_cache_time = now
+            logger.info("USD currency fetched from database and cached")
+        else:
+            logger.info("USD currency retrieved from cache")
+
+        return CurrencyConversionService._usd_currency_cache
 
     @staticmethod
-    async def _try_usd_conversion(
-            session: AsyncSession,
-            amount: float,
-            from_currency: Currency,
-            to_currency: Currency,
-            provider: TransferProvider
-    ) -> tuple[float, float, list[str]]:
-        logger.info(f"Attempting conversion through USD: {amount} {from_currency.abbreviation} to {to_currency.abbreviation}")
-        usd_currency = await get_currency_by_abbreviation(session, "USD")
-        if not usd_currency:
-            raise HTTPException(status_code=404, detail="USD currency not found in the database")
-
-        # Конвертация из исходной валюты в USD
-        amount_in_usd, rate_to_usd = await convert_currency(session, amount, from_currency, usd_currency, provider)
-        logger.info(f"Converted to USD: {amount_in_usd} USD")
-
-        # Конвертация из USD в целевую валюту
-        final_amount, rate_from_usd = await convert_currency(session, amount_in_usd, usd_currency, to_currency, provider)
-
-        converted_amount = round(final_amount, 2)
-        exchange_rate = round(rate_to_usd * rate_from_usd, 4)
-        conversion_path = [from_currency.abbreviation, "USD", to_currency.abbreviation]
-        logger.info(f"USD conversion successful: {amount} {from_currency.abbreviation} = {converted_amount} {to_currency.abbreviation}")
-        return converted_amount, exchange_rate, conversion_path
+    async def _get_exchange_rates(session: AsyncSession, provider_id: str, currency_ids: list[str]) -> dict:
+        query = (
+            select(ProviderExchangeRate)
+            .filter(
+                ProviderExchangeRate.provider_id == provider_id,
+                ProviderExchangeRate.from_currency_id.in_(currency_ids),
+                ProviderExchangeRate.to_currency_id.in_(currency_ids)
+            )
+        )
+        result = await session.execute(query)
+        rates = result.scalars().all()
+        return {(rate.from_currency_id, rate.to_currency_id): rate.rate for rate in rates}
