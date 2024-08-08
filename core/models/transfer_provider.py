@@ -12,8 +12,8 @@ class TransferProvider(Base):
     transfer_rules = relationship("TransferRule", back_populates="provider", cascade="all, delete-orphan")
 
     # TODO: think where it should be stored, I mean the link to the provider's source
-    # api_url: Mapped[str] = mapped_column(String, nullable=True)
-    # api_key: Mapped[str] = mapped_column(String, nullable=True) # TODO: think about it too, if we need it here or not
+    # api_url: Mapped[str] = mapped_column(String, nullable=True)  # TODO: think about it too, if we need it here or not
+    # api_key: Mapped[str] = mapped_column(String, nullable=True)  # TODO: think about it too, if we need it here or not
 
     def __repr__(self) -> str:
         return "<TransferProviders(id=%s, name=%s)>" % (self.id, self.name)
