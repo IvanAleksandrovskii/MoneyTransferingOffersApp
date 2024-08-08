@@ -2,7 +2,6 @@ from typing import List
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, APIRouter
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -27,7 +26,7 @@ async def get_currency(
 
 @router.get("/currencies", response_model=List[CurrencyResponse], tags=["Global Objects"])
 async def get_all_currencies(session: AsyncSession = Depends(db_helper.session_getter)):
-    query = select(Currency)
+    query = Currency.active()
     result = await session.execute(query)
     currencies = result.scalars().all()
     return [CurrencyResponse.model_validate(currency) for currency in currencies]
@@ -46,7 +45,7 @@ async def get_country(
 
 @router.get("/countries", response_model=List[CountryResponse], tags=["Global Objects"])
 async def get_all_countries(session: AsyncSession = Depends(db_helper.session_getter)):
-    query = select(Country).options(joinedload(Country.local_currency))
+    query = Country.active().options(joinedload(Country.local_currency))
     result = await session.execute(query)
     countries = result.unique().scalars().all()
     return [CountryResponse.model_validate(country) for country in countries]

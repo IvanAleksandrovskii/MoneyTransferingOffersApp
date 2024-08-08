@@ -2,7 +2,6 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -34,7 +33,7 @@ async def get_transfer_rules(
     logger.info(f"Searching for transfer rules: from {send_country_id} to {receive_country_id}")
 
     query = (
-        select(TransferRule)
+        TransferRule.active()
         .filter(
             TransferRule.send_country_id == send_country_id,
             TransferRule.receive_country_id == receive_country_id
@@ -51,8 +50,8 @@ async def get_transfer_rules(
     rules = result.unique().scalars().all()
 
     if not rules:
-        logger.warning(f"No transfer rules found for countries: from {send_country_id} to {receive_country_id}")
-        raise HTTPException(status_code=404, detail="No transfer rules found for the specified countries")
+        logger.warning(f"No active transfer rules found for countries: from {send_country_id} to {receive_country_id}")
+        raise HTTPException(status_code=404, detail="No active transfer rules found for the specified countries")
 
     logger.info(f"Found {len(rules)} transfer rules")
 

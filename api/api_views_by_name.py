@@ -1,6 +1,6 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, or_
+from sqlalchemy import or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -32,7 +32,7 @@ async def get_transfer_rules_by_countries(
     logger.info(f"Searching for transfer rules: from {send_country} to {receive_country}")
 
     # First, get the country IDs
-    country_query = select(Country.id).where(
+    country_query = Country.active().where(
         or_(
             Country.name.ilike(f"%{send_country}%"),
             Country.name.ilike(f"%{receive_country}%")
@@ -46,7 +46,7 @@ async def get_transfer_rules_by_countries(
 
     # Now, use these IDs to query the transfer rules
     query = (
-        select(TransferRule)
+        TransferRule.active()
         .filter(
             TransferRule.send_country_id.in_(country_ids),
             TransferRule.receive_country_id.in_(country_ids)
@@ -150,7 +150,7 @@ async def get_provider_rules_by_name(
     session: AsyncSession = Depends(db_helper.session_getter)
 ):
     query = (
-        select(TransferProvider)
+        TransferProvider.active()
         .filter(TransferProvider.name.ilike(f"%{provider_name}%"))
         .options(joinedload(TransferProvider.transfer_rules))
     )
@@ -169,7 +169,7 @@ async def get_provider_exchange_rates_by_name(
     session: AsyncSession = Depends(db_helper.session_getter)
 ):
     query = (
-        select(ProviderExchangeRate)
+        ProviderExchangeRate.active()
         .join(ProviderExchangeRate.provider)
         .filter(TransferProvider.name.ilike(f"%{provider_name}%"))
         .options(
@@ -192,7 +192,7 @@ async def get_currency_by_name(
     currency_name: str = Query(..., min_length=1, description="Name of the currency"),
     session: AsyncSession = Depends(db_helper.session_getter)
 ):
-    query = select(Currency).filter(Currency.name.ilike(f"%{currency_name}%"))
+    query = Currency.active().filter(Currency.name.ilike(f"%{currency_name}%"))
     result = await session.execute(query)
     currency = result.scalar_one_or_none()
 
@@ -208,7 +208,7 @@ async def get_country_by_name(
     session: AsyncSession = Depends(db_helper.session_getter)
 ):
     query = (
-        select(Country)
+        Country.active()
         .filter(Country.name.ilike(f"%{country_name}%"))
         .options(joinedload(Country.local_currency))
     )

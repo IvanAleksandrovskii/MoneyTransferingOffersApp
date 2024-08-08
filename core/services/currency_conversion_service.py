@@ -1,5 +1,4 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from fastapi import HTTPException
 from datetime import datetime, timedelta
 
@@ -68,23 +67,24 @@ class CurrencyConversionService:
                 CurrencyConversionService._usd_cache_time is None or
                 now - CurrencyConversionService._usd_cache_time > CurrencyConversionService._cache_duration):
 
-            usd_currency = await session.execute(select(Currency).filter(Currency.abbreviation == "USD"))
+            # Use the .active() method to ensure we only get active USD currency
+            usd_currency = await session.execute(Currency.active().filter(Currency.abbreviation == "USD"))
             usd_currency = usd_currency.scalar_one_or_none()
             if not usd_currency:
-                raise HTTPException(status_code=404, detail="USD currency not found in the database")
+                raise HTTPException(status_code=404, detail="Active USD currency not found in the database")
 
             CurrencyConversionService._usd_currency_cache = usd_currency
             CurrencyConversionService._usd_cache_time = now
-            logger.info("USD currency fetched from database and cached")
+            logger.info("Active USD currency fetched from database and cached")
         else:
-            logger.info("USD currency retrieved from cache")
+            logger.info("Active USD currency retrieved from cache")
 
         return CurrencyConversionService._usd_currency_cache
 
     @staticmethod
     async def _get_exchange_rates(session: AsyncSession, provider_id: str, currency_ids: list[str]) -> dict:
         query = (
-            select(ProviderExchangeRate)
+            ProviderExchangeRate.active()
             .filter(
                 ProviderExchangeRate.provider_id == provider_id,
                 ProviderExchangeRate.from_currency_id.in_(currency_ids),

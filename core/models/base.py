@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import MetaData, text, Boolean
+from sqlalchemy import MetaData, text, Boolean, select
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 
@@ -26,3 +26,11 @@ class Base(DeclarativeBase):
         default=uuid.uuid4
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    @classmethod
+    def active(cls):
+        """
+        Returns a query that filters only active objects.
+        This method should be used as the base for all queries.
+        """
+        return select(cls).where(cls.is_active == True)

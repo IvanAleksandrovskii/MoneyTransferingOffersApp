@@ -2,7 +2,6 @@ from typing import List
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, APIRouter
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
@@ -16,7 +15,7 @@ router = APIRouter()
 @router.get("/providers", response_model=List[ProviderResponse], tags=["Provider Objects"])
 async def get_providers(session: AsyncSession = Depends(db_helper.session_getter)):
     query = (
-        select(TransferProvider)
+        TransferProvider.active()
         .filter(TransferProvider.is_active == True)
         .options(selectinload(TransferProvider.transfer_rules).selectinload(TransferRule.send_country))
         .options(selectinload(TransferProvider.transfer_rules).selectinload(TransferRule.receive_country))
@@ -37,7 +36,7 @@ async def get_provider_rules_by_id(
     if not provider:
         raise HTTPException(status_code=404, detail="Provider not found")
 
-    query = select(TransferRule).filter(TransferRule.provider_id == provider.id).options(
+    query = TransferRule.active().filter(TransferRule.provider_id == provider.id).options(
         joinedload(TransferRule.send_country),
         joinedload(TransferRule.receive_country),
         joinedload(TransferRule.provider),
@@ -51,7 +50,7 @@ async def get_provider_rules_by_id(
 
 @router.get("/transfer-rules", response_model=List[DetailedTransferRuleResponse], tags=["Provider Objects"])
 async def get_all_transfer_rules(session: AsyncSession = Depends(db_helper.session_getter)):
-    query = select(TransferRule).options(
+    query = TransferRule.active().options(
         joinedload(TransferRule.send_country),
         joinedload(TransferRule.receive_country),
         joinedload(TransferRule.provider),
@@ -73,7 +72,7 @@ async def get_provider_exchange_rates(
         raise HTTPException(status_code=404, detail=f"Provider not found with id: {provider_id}")
 
     query = (
-        select(ProviderExchangeRate)
+        ProviderExchangeRate.active()
         .filter(ProviderExchangeRate.provider_id == provider.id)
         .options(
             joinedload(ProviderExchangeRate.provider),
@@ -103,7 +102,7 @@ async def get_provider_exchange_rates(
 
 @router.get("/exchange-rates", response_model=List[ExchangeRateResponse], tags=["Provider Objects"])
 async def get_all_exchange_rates(session: AsyncSession = Depends(db_helper.session_getter)):
-    query = select(ProviderExchangeRate).options(
+    query = ProviderExchangeRate.active().options(
         joinedload(ProviderExchangeRate.provider),
         joinedload(ProviderExchangeRate.from_currency),
         joinedload(ProviderExchangeRate.to_currency)
