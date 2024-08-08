@@ -1,7 +1,7 @@
 from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from .base import BaseResponse
 from .country import CountryResponse
@@ -9,21 +9,43 @@ from .currency import CurrencyResponse
 from .provider import ProviderResponse
 
 
-class TransferRuleDetails(BaseResponse):
+class TransferRuleDetails(BaseModel):
+    id: UUID
     provider: ProviderResponse
     transfer_method: str
-    estimated_transfer_time: Optional[str]  # TODO: update when time field changed
-    required_documents: Optional[str]  # TODO: update to List[obj] when document obj is created
-    original_amount: float = Field(..., gt=0)
-    converted_amount: float = Field(..., gt=0)
+    estimated_transfer_time: Optional[str] = None  # TODO: update when time field changed
+    required_documents: Optional[str] = None  # TODO: update to List[obj] when document obj is created
+    original_amount: Optional[float] = Field(None, ge=0)
+    converted_amount: Optional[float] = Field(None, ge=0)
     transfer_currency: CurrencyResponse
-    amount_received: float = Field(..., ge=0)
-    transfer_fee: float = Field(..., ge=0)
+    amount_received: Optional[float] = Field(None, ge=0)
+    transfer_fee: Optional[float] = Field(None, ge=0)
     transfer_fee_percentage: float = Field(..., ge=0, le=100)
     min_transfer_amount: float = Field(..., gt=0)
     max_transfer_amount: float = Field(..., gt=0)
-    exchange_rate: float = Field(..., gt=0)
-    conversion_path: List[str | None]
+    exchange_rate: Optional[float] = Field(None, gt=0)
+    conversion_path: List[str]
+
+    @model_validator(mode='after')
+    def validate_transfer_rule_details(self) -> 'TransferRuleDetails':
+        # Ensure transfer_fee_percentage is between 0 and 100
+        if self.transfer_fee_percentage < 0 or self.transfer_fee_percentage > 100:
+            raise ValueError("transfer_fee_percentage must be between 0 and 100")
+        # Ensure max_transfer_amount is greater than min_transfer_amount
+        if self.max_transfer_amount <= self.min_transfer_amount:
+            raise ValueError("max_transfer_amount must be greater than min_transfer_amount")
+
+        # Ensure that optional amounts are positive if provided
+        for field_name in ['original_amount', 'converted_amount', 'amount_received', 'transfer_fee', 'exchange_rate']:
+            value = getattr(self, field_name)
+            if value is not None and value < 0:
+                raise ValueError(f"{field_name} must be greater than or equal to 0")
+
+        return self
+
+    model_config = {
+        "extra": "forbid",  # This will raise an error if extra fields are provided
+    }
 
 
 class DetailedTransferRuleResponse(BaseResponse):
@@ -68,5 +90,5 @@ class DetailedTransferRuleResponse(BaseResponse):
 class OptimizedTransferRuleResponse(BaseModel):
     send_country: CountryResponse
     receive_country: CountryResponse
-    original_currency: CurrencyResponse
+    original_currency: Optional[CurrencyResponse] = None
     rules: List[TransferRuleDetails]
