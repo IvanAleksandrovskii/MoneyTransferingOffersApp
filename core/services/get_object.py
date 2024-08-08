@@ -1,12 +1,12 @@
 from uuid import UUID
 
 from fastapi import HTTPException
-from sqlalchemy import select, or_
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from core import logger
-from core.models import Country, Currency
+from core.models import Country
 
 
 async def get_object_by_id(session: AsyncSession, model, id: UUID):
@@ -27,10 +27,8 @@ async def get_object_by_id(session: AsyncSession, model, id: UUID):
 
 
 async def get_object_by_name(session: AsyncSession, model, name: str):
-    if model == Currency:
-        query = select(model).filter(or_(model.name == name, model.abbreviation == name))
-    elif hasattr(model, 'name'):
-        query = select(model).filter(model.name == name)
+    if hasattr(model, 'name'):
+        query = select(model).filter(model.name.ilike(f"%{name}%"))
     else:
         raise HTTPException(status_code=400, detail=f"Cannot search {model.__name__} by name")
 
