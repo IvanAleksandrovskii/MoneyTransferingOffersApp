@@ -12,10 +12,10 @@ ENV/
 .idea
 
 # Byte-compiled python files
-__pycache__/
+**/__pycache__/
 
 # macOS files
 .DS_Store
 
-/unused/
-/core/schemas/unused/
+**/unused/
+**/tests/
