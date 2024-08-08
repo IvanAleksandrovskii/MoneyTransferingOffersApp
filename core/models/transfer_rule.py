@@ -31,7 +31,7 @@ class TransferRule(Base):
     max_transfer_amount: Mapped[Optional[float]] = mapped_column(Float, nullable=False)  # TODO: nullable=False?
 
     # Info about transfer currency
-    transfer_currency_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("currencies.id"), nullable=True)
+    transfer_currency_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("currencies.id"), nullable=False)
     transfer_currency: Mapped[Optional[Currency]] = relationship("Currency", foreign_keys=[transfer_currency_id],
                                                                  lazy="joined")
 
@@ -42,7 +42,8 @@ class TransferRule(Base):
     transfer_method: Mapped[str] = mapped_column(String, nullable=False)  # Online / Office TODO: maybe enum or binary?
     estimated_transfer_time: Mapped[Optional[str]] = mapped_column(String,
                                                                    nullable=True)  # Time transfer takes: hours/days etc.
-    required_documents: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    #                                                        TODO: nullable=False (?) for estimated_transfer_time
+    required_documents: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # TODO: nullable=False (!)
 
     __table_args__ = (
         Index('idx_transfer_rule_send_country', 'send_country_id'),

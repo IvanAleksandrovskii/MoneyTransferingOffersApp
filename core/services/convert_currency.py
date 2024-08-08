@@ -7,12 +7,12 @@ from core.models import Currency, TransferProvider, ProviderExchangeRate
 
 
 async def convert_currency(session: AsyncSession, amount: float, from_currency: Currency, to_currency: Currency,
-                           provider: TransferProvider) -> float:
+                           provider: TransferProvider) -> tuple[float, float]:
     logger.info(
         f"Converting {amount} from {from_currency.abbreviation} to {to_currency.abbreviation} using provider {provider.name}")
 
     try:
-        exchange_rate = await session.execute(
+        exchange_rate_query = await session.execute(
             select(ProviderExchangeRate)
             .filter(
                 ProviderExchangeRate.provider_id == provider.id,
@@ -20,7 +20,7 @@ async def convert_currency(session: AsyncSession, amount: float, from_currency: 
                 ProviderExchangeRate.to_currency_id == to_currency.id
             )
         )
-        rate = exchange_rate.scalar_one_or_none()
+        rate = exchange_rate_query.scalar_one_or_none()
 
         if not rate:
             logger.warning(
@@ -33,8 +33,10 @@ async def convert_currency(session: AsyncSession, amount: float, from_currency: 
         logger.info(f"Exchange rate found: {rate.rate}")
         converted_amount = amount * rate.rate
         logger.info(f"Converted amount: {amount} {from_currency.abbreviation} = {converted_amount} {to_currency.abbreviation}")
-        return converted_amount
+        return converted_amount, rate.rate
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error during currency conversion: {str(e)}")
         raise HTTPException(

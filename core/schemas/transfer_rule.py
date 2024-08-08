@@ -1,7 +1,10 @@
 from typing import Optional, List
 from uuid import UUID
 
+from pydantic import BaseModel, Field
+
 from .base import BaseResponse
+from .country import CountryResponse
 from .currency import CurrencyResponse
 from .provider import ProviderResponse
 
@@ -9,18 +12,18 @@ from .provider import ProviderResponse
 class TransferRuleDetails(BaseResponse):
     provider: ProviderResponse
     transfer_method: str
-    estimated_transfer_time: Optional[str]
-    required_documents: Optional[str]
-    original_amount: float
-    converted_amount: float
+    estimated_transfer_time: Optional[str]  # TODO: update when time field changed
+    required_documents: Optional[str]  # TODO: update to List[obj] when document obj is created
+    original_amount: float = Field(..., gt=0)
+    converted_amount: float = Field(..., gt=0)
     transfer_currency: CurrencyResponse
-    amount_received: float
-    transfer_fee: float
-    transfer_fee_percentage: float
-    min_transfer_amount: float
-    max_transfer_amount: Optional[float]
-    exchange_rate: float
-    conversion_path: List[str]
+    amount_received: float = Field(..., ge=0)
+    transfer_fee: float = Field(..., ge=0)
+    transfer_fee_percentage: float = Field(..., ge=0, le=100)
+    min_transfer_amount: float = Field(..., gt=0)
+    max_transfer_amount: float = Field(..., gt=0)
+    exchange_rate: float = Field(..., gt=0)
+    conversion_path: List[str | None]
 
 
 class DetailedTransferRuleResponse(BaseResponse):
@@ -33,12 +36,12 @@ class DetailedTransferRuleResponse(BaseResponse):
     receive_country_id: UUID
     transfer_currency_abbreviation: str
     transfer_currency_id: UUID
-    min_transfer_amount: float
-    max_transfer_amount: Optional[float]
-    fee_percentage: float
+    min_transfer_amount: float = Field(..., gt=0)
+    max_transfer_amount: float = Field(..., gt=0)
+    fee_percentage: float = Field(..., ge=0, le=100)
     transfer_method: str
-    estimated_transfer_time: Optional[str]
-    required_documents: Optional[str]
+    estimated_transfer_time: Optional[str]  # TODO: update when time field changed
+    required_documents: Optional[str]  # TODO: update when document obj is created
 
     @classmethod
     def model_validate(cls, obj, **kwargs):
@@ -60,3 +63,10 @@ class DetailedTransferRuleResponse(BaseResponse):
             estimated_transfer_time=obj.estimated_transfer_time,
             required_documents=obj.required_documents
         )
+
+
+class OptimizedTransferRuleResponse(BaseModel):
+    send_country: CountryResponse
+    receive_country: CountryResponse
+    original_currency: CurrencyResponse
+    rules: List[TransferRuleDetails]
