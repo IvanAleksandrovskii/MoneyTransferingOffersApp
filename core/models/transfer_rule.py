@@ -51,7 +51,7 @@ class TransferRule(Base):
         Index('idx_transfer_rule_provider', 'provider_id'),
         Index('idx_transfer_rule_currency', 'transfer_currency_id'),
         CheckConstraint('min_transfer_amount <= max_transfer_amount', name='check_min_max_transfer_amount'),
-        CheckConstraint('fee_percentage >= 0 AND fee_percentage <= 100', name='check_fee_percentage_range'),
+        CheckConstraint('fee_percentage >= 0 AND fee_percentage < 100', name='check_fee_percentage_range'),
     )
 
     def __repr__(self) -> str:
