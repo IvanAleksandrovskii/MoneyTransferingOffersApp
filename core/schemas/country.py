@@ -7,6 +7,7 @@ from .currency import CurrencyResponse
 
 class CountryResponse(BaseResponse):
     name: str
+#   TODO: add abbreviation field
     local_currency: CurrencyResponse
 
     @classmethod
