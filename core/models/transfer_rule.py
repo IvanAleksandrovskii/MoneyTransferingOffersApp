@@ -1,13 +1,22 @@
 from typing import Optional
 import uuid
 
-from sqlalchemy import ForeignKey, Float, String, Index, CheckConstraint
+from sqlalchemy import ForeignKey, Float, String, Index, CheckConstraint, Table, Column
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models import Base
 from core.models.country import Country
 from core.models.currency import Currency
 from core.models.transfer_provider import TransferProvider
+
+
+# Middle-layer table for many-to-many relationship between TransferRule and Document
+transfer_rule_documents = Table(
+    'transfer_rule_documents',
+    Base.metadata,
+    Column('transfer_rule_id', ForeignKey('transfer_rules.id'), primary_key=True),
+    Column('document_id', ForeignKey('documents.id'), primary_key=True)
+)
 
 
 class TransferRule(Base):
@@ -43,7 +52,14 @@ class TransferRule(Base):
     estimated_transfer_time: Mapped[Optional[str]] = mapped_column(String,
                                                                    nullable=True)  # Time transfer takes: hours/days etc.
     #                                                        TODO: nullable=False (?) for estimated_transfer_time
-    required_documents: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # TODO: nullable=False (!)
+    # required_documents: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # TODO: nullable=False (!)
+
+    required_documents = relationship("Document", secondary=transfer_rule_documents,
+                                      back_populates="transfer_rules", lazy="selectin")
+
+    # TODO: New estimate time logic
+    # min_execution_time = Column(DateTime, nullable=False)
+    # max_execution_time = Column(DateTime, nullable=False)
 
     __table_args__ = (
         Index('idx_transfer_rule_send_country', 'send_country_id'),
