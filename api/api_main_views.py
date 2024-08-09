@@ -9,7 +9,7 @@ from core import logger
 from core.models import db_helper, Currency, Country, TransferRule
 from core.schemas import (
     OptimizedTransferRuleResponse, TransferRuleDetails,
-    CurrencyResponse, CountryResponse, ProviderResponse,
+    CurrencyResponse, CountryResponse, ProviderResponse, DocumentResponse,
 )
 from core.services import CurrencyConversionService
 from core.services import get_object_by_id
@@ -42,7 +42,8 @@ async def get_transfer_rules(
             joinedload(TransferRule.send_country).joinedload(Country.local_currency),
             joinedload(TransferRule.receive_country).joinedload(Country.local_currency),
             joinedload(TransferRule.provider),
-            joinedload(TransferRule.transfer_currency)
+            joinedload(TransferRule.transfer_currency),
+            joinedload(TransferRule.required_documents)
         )
     )
 
@@ -107,7 +108,7 @@ async def get_transfer_rules(
                 provider=ProviderResponse.model_validate(rule.provider),
                 transfer_method=rule.transfer_method,
                 estimated_transfer_time=rule.estimated_transfer_time,
-                required_documents=rule.required_documents,
+                required_documents=[DocumentResponse(id=doc.id, name=doc.name) for doc in rule.required_documents],
                 original_amount=amount,
                 converted_amount=converted_amount,
                 transfer_currency=CurrencyResponse.model_validate(rule.transfer_currency),
