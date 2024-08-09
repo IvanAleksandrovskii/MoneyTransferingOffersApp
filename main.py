@@ -15,6 +15,7 @@ from api import api_router
 from core.admin import (
     CountryAdmin,
     CurrencyAdmin,
+    DocumentAdmin,
     TransferProviderAdmin,
     TransferRuleAdmin,
     ProviderExchangeRateAdmin,
@@ -43,6 +44,7 @@ admin = Admin(main_app, engine=db_helper.engine, authentication_backend=sqladmin
 
 admin.add_view(CountryAdmin)
 admin.add_view(CurrencyAdmin)
+admin.add_view(DocumentAdmin)
 admin.add_view(TransferProviderAdmin)
 admin.add_view(ProviderExchangeRateAdmin)
 admin.add_view(TransferRuleAdmin)
