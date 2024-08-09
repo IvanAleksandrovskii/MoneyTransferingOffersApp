@@ -12,15 +12,17 @@ from core import logger
 from core.models import db_helper
 from api import api_router
 
-from core.admin import (
+from core.admin.models import (
     CountryAdmin,
     CurrencyAdmin,
     DocumentAdmin,
     TransferProviderAdmin,
     TransferRuleAdmin,
     ProviderExchangeRateAdmin,
+)
+from core.admin import (
     sqladmin_authentication_backend,
-    sync_sqladmin_db_helper
+    sync_sqladmin_db_helper,
 )
 
 
