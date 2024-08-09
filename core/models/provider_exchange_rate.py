@@ -34,7 +34,7 @@ class ProviderExchangeRate(Base):
 
     @classmethod
     def get_list_query(cls):
-        return select(cls).options(
+        return cls.active().options(
             joinedload(cls.provider),
             joinedload(cls.from_currency),
             joinedload(cls.to_currency)
