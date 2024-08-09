@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
+from . import DocumentResponse
 from .base import BaseResponse
 from .country import CountryResponse
 from .currency import CurrencyResponse
@@ -14,7 +15,9 @@ class TransferRuleDetails(BaseModel):
     provider: ProviderResponse
     transfer_method: str
     estimated_transfer_time: Optional[str] = None  # TODO: update when time field changed
-    required_documents: Optional[str] = None  # TODO: update to List[obj] when document obj is created
+    # min_execution_time: datetime
+    # max_execution_time: datetime
+    required_documents: List[DocumentResponse]
     original_amount: Optional[float] = Field(None, ge=0)
     converted_amount: Optional[float] = Field(None, ge=0)
     transfer_currency: CurrencyResponse
@@ -63,7 +66,7 @@ class DetailedTransferRuleResponse(BaseResponse):
     fee_percentage: float = Field(..., ge=0, le=100)
     transfer_method: str
     estimated_transfer_time: Optional[str]  # TODO: update when time field changed
-    required_documents: Optional[str]  # TODO: update when document obj is created
+    required_documents: List[DocumentResponse]
 
     @classmethod
     def model_validate(cls, obj, **kwargs):
@@ -83,7 +86,7 @@ class DetailedTransferRuleResponse(BaseResponse):
             fee_percentage=obj.fee_percentage,
             transfer_method=obj.transfer_method,
             estimated_transfer_time=obj.estimated_transfer_time,
-            required_documents=obj.required_documents
+            required_documents=[DocumentResponse(id=doc.id, name=doc.name) for doc in obj.required_documents]
         )
 
 
