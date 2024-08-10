@@ -2,13 +2,13 @@ from typing import List
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, APIRouter
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from core.services import get_object_by_id
-from core.models import db_helper, Currency, Country
-from core.schemas import CurrencyResponse, CountryResponse
-
+from core.models import db_helper, Currency, Country, Document
+from core.schemas import CurrencyResponse, CountryResponse, DocumentResponse
 
 router = APIRouter()
 
@@ -49,3 +49,22 @@ async def get_all_countries(session: AsyncSession = Depends(db_helper.session_ge
     result = await session.execute(query)
     countries = result.unique().scalars().all()
     return [CountryResponse.model_validate(country) for country in countries]
+
+
+@router.get("/document/{document_id}", response_model=DocumentResponse, tags=["Global Objects"])
+async def get_document(
+        document_id: UUID,
+        session: AsyncSession = Depends(db_helper.session_getter)
+):
+    document = await get_object_by_id(session, Document, document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return DocumentResponse(id=document.id, name=document.name)
+
+
+@router.get("/documents", response_model=List[DocumentResponse], tags=["Global Objects"])
+async def get_all_documents(session: AsyncSession = Depends(db_helper.session_getter)):
+    query = select(Document)  # or filter for active only by Document.active() ?
+    result = await session.execute(query)
+    documents = result.scalars().all()
+    return [DocumentResponse(id=doc.id, name=doc.name) for doc in documents]

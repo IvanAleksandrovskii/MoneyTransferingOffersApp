@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, APIRouter
 from sqlalchemy import inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.models import db_helper, Country, Currency, TransferProvider, TransferRule, ProviderExchangeRate
+from core.models import db_helper, Country, Currency, TransferProvider, TransferRule, ProviderExchangeRate, Document
 from core.schemas import GenericObjectResponse
 
 
@@ -20,7 +20,7 @@ async def get_object_by_uuid(
         uuid: UUID,
         session: AsyncSession = Depends(db_helper.session_getter)
 ):
-    for model in [Country, Currency, TransferProvider, TransferRule, ProviderExchangeRate]:
+    for model in [Country, Currency, TransferProvider, TransferRule, ProviderExchangeRate, Document]:
         obj = await session.get(model, uuid)
         if obj:
             # Extract data excluding SQLAlchemy fields

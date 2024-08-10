@@ -9,7 +9,8 @@ from core import logger
 from core.models import db_helper, Currency, Country, TransferRule
 from core.schemas import (
     OptimizedTransferRuleResponse, TransferRuleDetails,
-    CurrencyResponse, CountryResponse, ProviderResponse, DocumentResponse,
+    CurrencyResponse, CountryResponse, ProviderResponse,
+    DocumentResponse, TimeDeltaInfo,
 )
 from core.services import CurrencyConversionService
 from core.services import get_object_by_id
@@ -58,8 +59,11 @@ async def get_transfer_rules(
 
     from_currency = None
     rule_details = []
+
     for rule in rules:
         try:
+            logger.info(f"Processing rule {rule.id}")
+            logger.info(f"min_transfer_time: {rule.min_transfer_time}, max_transfer_time: {rule.max_transfer_time}")
             if from_currency_id is not None:
                 if from_currency is None:
                     from_currency = await get_object_by_id(session, Currency, from_currency_id)
@@ -106,8 +110,17 @@ async def get_transfer_rules(
             rule_detail = TransferRuleDetails(
                 id=rule.id,
                 provider=ProviderResponse.model_validate(rule.provider),
+                min_transfer_time=TimeDeltaInfo(
+                    days=rule.min_transfer_time.days,
+                    hours=rule.min_transfer_time.seconds // 3600,
+                    minutes=(rule.min_transfer_time.seconds % 3600) // 60
+                ),
+                max_transfer_time=TimeDeltaInfo(
+                    days=rule.max_transfer_time.days,
+                    hours=rule.max_transfer_time.seconds // 3600,
+                    minutes=(rule.max_transfer_time.seconds % 3600) // 60
+                ),
                 transfer_method=rule.transfer_method,
-                estimated_transfer_time=rule.estimated_transfer_time,
                 required_documents=[DocumentResponse(id=doc.id, name=doc.name) for doc in rule.required_documents],
                 original_amount=amount,
                 converted_amount=converted_amount,
@@ -121,14 +134,18 @@ async def get_transfer_rules(
                 conversion_path=conversion_path
             )
             rule_details.append(rule_detail)
+            logger.info(f"Successfully processed rule {rule.id}")
 
         except HTTPException as e:
             logger.warning(f"Conversion failed for rule {rule.id}: {str(e)}")
         except Exception as e:
-            logger.error(f"Unexpected error processing rule {rule.id}: {str(e)}")
+            logger.error(f"Unexpected error processing rule {rule.id}: {str(e)}", exc_info=True)
 
-    if not rule_details:
-        raise HTTPException(status_code=404, detail="No valid transfer rules found for the specified parameters")
+        logger.info(f"Found {len(rule_details)} valid transfer rules after processing")
+
+        if not rule_details:
+            logger.warning("No valid transfer rules found for the specified parameters")
+            raise HTTPException(status_code=404, detail="No valid transfer rules found for the specified parameters")
 
     return OptimizedTransferRuleResponse(
         send_country=CountryResponse.model_validate(rules[0].send_country),
