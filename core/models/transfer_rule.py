@@ -1,8 +1,9 @@
+from datetime import timedelta
 from typing import Optional
 import uuid
 
-from sqlalchemy import ForeignKey, Float, String, Index, CheckConstraint, Table, Column
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import ForeignKey, Float, String, Index, CheckConstraint, Table, Column, Interval
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from core.models import Base
 from core.models.country import Country
@@ -49,9 +50,12 @@ class TransferRule(Base):
     # Time transfer takes
     # Documents needed
     transfer_method: Mapped[str] = mapped_column(String, nullable=False)  # Online / Office TODO: maybe enum or binary?
-    estimated_transfer_time: Mapped[Optional[str]] = mapped_column(String,
-                                                                   nullable=True)  # Time transfer takes: hours/days etc.
+    # estimated_transfer_time: Mapped[Optional[str]] = mapped_column(String,
+    #                                                                nullable=True)  # Time transfer takes: hours/days etc.
     #                                                        TODO: nullable=False (?) for estimated_transfer_time
+    min_transfer_time: Mapped[timedelta] = mapped_column(Interval, nullable=False)
+    max_transfer_time: Mapped[timedelta] = mapped_column(Interval, nullable=False)
+
     # required_documents: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # TODO: nullable=False (!)
 
     required_documents = relationship("Document", secondary=transfer_rule_documents,
@@ -69,6 +73,17 @@ class TransferRule(Base):
         CheckConstraint('min_transfer_amount <= max_transfer_amount', name='check_min_max_transfer_amount'),
         CheckConstraint('fee_percentage >= 0 AND fee_percentage < 100', name='check_fee_percentage_range'),
     )
+
+    # TODO: Add more validation
+    @validates('fee_percentage', 'min_transfer_amount', 'max_transfer_amount')
+    def validate_fields(self, key, value):
+        if key == 'fee_percentage' and (value < 0 or value > 100):
+            raise ValueError('fee_percentage must be between 0 and 100')
+        if key in ['min_transfer_amount', 'max_transfer_amount'] and value < 0:
+            raise ValueError(f'{key} must be non-negative')
+        if key == 'max_transfer_amount' and hasattr(self, 'min_transfer_amount') and value < self.min_transfer_amount:
+            raise ValueError('max_transfer_amount must be greater than or equal to min_transfer_amount')
+        return value
 
     def __repr__(self) -> str:
         return (

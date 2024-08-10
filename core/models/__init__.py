@@ -8,5 +8,5 @@ from .currency import Currency
 from .country import Country
 from .document import Document
 from .transfer_provider import TransferProvider
-from .provider_exchange_rate import ProviderExchangeRate
+from .exchange_rate import ProviderExchangeRate
 from .transfer_rule import TransferRule
