@@ -32,7 +32,7 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
     form_columns = [
         'send_country', 'receive_country', 'provider', 'transfer_currency',
         'fee_percentage', 'min_transfer_amount', 'max_transfer_amount',
-        'transfer_method', 'estimated_transfer_time', 'is_active', 'required_documents'
+        'transfer_method', 'min_transfer_time', 'max_transfer_time', 'is_active', 'required_documents'
     ]
 
     async def scaffold_form(self):

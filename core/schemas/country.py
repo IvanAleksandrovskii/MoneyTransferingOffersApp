@@ -1,13 +1,10 @@
-from typing import List
-from uuid import UUID
-
 from .base import BaseResponse
 from .currency import CurrencyResponse
 
 
 class CountryResponse(BaseResponse):
     name: str
-#   TODO: add abbreviation field
+    abbreviation: str
     local_currency: CurrencyResponse
 
     @classmethod
@@ -15,5 +12,6 @@ class CountryResponse(BaseResponse):
         return cls(
             id=obj.id,
             name=obj.name,
+            abbreviation=obj.abbreviation,
             local_currency=CurrencyResponse.model_validate(obj.local_currency)
         )

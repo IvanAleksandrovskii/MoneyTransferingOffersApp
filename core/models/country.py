@@ -10,7 +10,7 @@ class Country(Base):
     __tablename__ = "countries"
 
     name: Mapped[str] = mapped_column(String, nullable=False)
-#   TODO: Add abbreviation (!)  US (or USA, not sure which one is correct for that case), RUS, UZB, FIN, SWE, etc.
+    abbreviation: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     local_currency_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("currencies.id"), nullable=False)
     local_currency = relationship("Currency", back_populates="countries")
 
