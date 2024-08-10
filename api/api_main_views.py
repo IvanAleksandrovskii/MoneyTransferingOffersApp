@@ -24,8 +24,8 @@ router = APIRouter()
 async def get_transfer_rules(
     send_country_id: UUID = Query(..., description="ID of the sending country"),
     receive_country_id: UUID = Query(..., description="ID of the receiving country"),
-    from_currency_id: Optional[UUID] = Query(None, description="ID of the sending currency"),
-    amount: Optional[float] = Query(None, description="Amount to transfer", gt=0),
+    optional_from_currency_id: Optional[UUID] = Query(None, description="ID of the sending currency"),
+    optional_amount: Optional[float] = Query(None, description="Amount to transfer", gt=0),
     session: AsyncSession = Depends(db_helper.session_getter)
 ):
     if not send_country_id or not receive_country_id:
@@ -64,17 +64,17 @@ async def get_transfer_rules(
         try:
             logger.info(f"Processing rule {rule.id}")
             logger.info(f"min_transfer_time: {rule.min_transfer_time}, max_transfer_time: {rule.max_transfer_time}")
-            if from_currency_id is not None:
+            if optional_from_currency_id is not None:
                 if from_currency is None:
-                    from_currency = await get_object_by_id(session, Currency, from_currency_id)
+                    from_currency = await get_object_by_id(session, Currency, optional_from_currency_id)
                     if not from_currency:
-                        logger.warning(f"From currency not found: {from_currency_id}")
+                        logger.warning(f"From currency not found: {optional_from_currency_id}")
                         continue  # Skip this rule, go to the next one
 
-                if amount is not None:
+                if optional_amount is not None:
                     converted_amount, exchange_rate, conversion_path = await CurrencyConversionService.convert_amount(
                         session=session,
-                        amount=amount,
+                        amount=optional_amount,
                         from_currency=from_currency,
                         to_currency=rule.transfer_currency,
                         provider=rule.provider
@@ -122,7 +122,7 @@ async def get_transfer_rules(
                 ),
                 transfer_method=rule.transfer_method,
                 required_documents=[DocumentResponse(id=doc.id, name=doc.name) for doc in rule.required_documents],
-                original_amount=amount,
+                original_amount=optional_amount,
                 converted_amount=converted_amount,
                 transfer_currency=CurrencyResponse.model_validate(rule.transfer_currency),
                 amount_received=amount_received,

@@ -2,7 +2,6 @@ from typing import List
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, APIRouter
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -64,7 +63,7 @@ async def get_document(
 
 @router.get("/documents", response_model=List[DocumentResponse], tags=["Global Objects"])
 async def get_all_documents(session: AsyncSession = Depends(db_helper.session_getter)):
-    query = select(Document)  # or filter for active only by Document.active() ?
+    query = Document.active()  # or filter for active only by Document.active() ?
     result = await session.execute(query)
     documents = result.scalars().all()
     return [DocumentResponse(id=doc.id, name=doc.name) for doc in documents]
