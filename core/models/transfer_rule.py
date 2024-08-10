@@ -61,10 +61,6 @@ class TransferRule(Base):
     required_documents = relationship("Document", secondary=transfer_rule_documents,
                                       back_populates="transfer_rules", lazy="selectin")
 
-    # TODO: New estimate time logic
-    # min_execution_time = Column(DateTime, nullable=False)
-    # max_execution_time = Column(DateTime, nullable=False)
-
     __table_args__ = (
         Index('idx_transfer_rule_send_country', 'send_country_id'),
         Index('idx_transfer_rule_receive_country', 'receive_country_id'),
@@ -74,7 +70,7 @@ class TransferRule(Base):
         CheckConstraint('fee_percentage >= 0 AND fee_percentage < 100', name='check_fee_percentage_range'),
     )
 
-    # TODO: Add more validation
+    # TODO: Add more validation (?)
     @validates('fee_percentage', 'min_transfer_amount', 'max_transfer_amount')
     def validate_fields(self, key, value):
         if key == 'fee_percentage' and (value < 0 or value > 100):
@@ -84,6 +80,12 @@ class TransferRule(Base):
         if key == 'max_transfer_amount' and hasattr(self, 'min_transfer_amount') and value < self.min_transfer_amount:
             raise ValueError('max_transfer_amount must be greater than or equal to min_transfer_amount')
         return value
+
+    def __str__(self):
+        return (
+            f"{self.provider.name}: {self.send_country.abbreviation} -> {self.receive_country.abbreviation} "
+            f"({self.transfer_currency.abbreviation}) - {self.min_transfer_amount} to {self.max_transfer_amount}"
+        )
 
     def __repr__(self) -> str:
         return (

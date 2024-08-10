@@ -40,6 +40,9 @@ class ProviderExchangeRate(Base):
             joinedload(cls.to_currency)
         )
 
+    def __str__(self):
+        return f"{self.provider.name}: {self.from_currency.abbreviation} -> {self.to_currency.abbreviation} = {self.rate}"
+
     def __repr__(self) -> str:
         return (f"<ProviderExchangeRate(id={self.id}, from={self.from_currency_id}, "
                 f"to={self.to_currency_id}, rate={self.rate}, last_updated={self.last_updated})>")

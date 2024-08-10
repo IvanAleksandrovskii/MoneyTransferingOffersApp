@@ -12,11 +12,19 @@ metadata = MetaData(naming_convention=settings.db.naming_convention)
 
 
 class Base(DeclarativeBase):
+    """
+    Base class for all SQLAlchemy models in the project.
+    Provides common attributes and methods for all models.
+    """
     __abstract__ = True
     metadata = metadata
 
     @declared_attr
     def __tablename__(cls) -> str:
+        """
+        Automatically generates table name from the class name.
+        Converts CamelCase to snake_case and adds 's' at the end.
+        """
         return f"{camel_case_to_snake_case(cls.__name__)}s"
 
     id: Mapped[uuid.UUID] = mapped_column(

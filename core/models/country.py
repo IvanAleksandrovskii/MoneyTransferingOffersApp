@@ -14,5 +14,8 @@ class Country(Base):
     local_currency_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("currencies.id"), nullable=False)
     local_currency = relationship("Currency", back_populates="countries")
 
+    def __str__(self):
+        return f"{self.name} ({self.abbreviation})"
+
     def __repr__(self) -> str:
         return "<Country(id=%s, name=%s, local_currency_id=%s)>" % (self.id, self.name, self.local_currency_id)
