@@ -121,7 +121,7 @@ async def get_transfer_rules(
                     minutes=(rule.max_transfer_time.seconds % 3600) // 60
                 ),
                 transfer_method=rule.transfer_method,
-                required_documents=[DocumentResponse(id=doc.id, name=doc.name) for doc in rule.required_documents],
+                required_documents=[DocumentResponse(name=doc.name) for doc in rule.required_documents],
                 original_amount=optional_amount,
                 converted_amount=converted_amount,
                 transfer_currency=CurrencyResponse.model_validate(rule.transfer_currency),
