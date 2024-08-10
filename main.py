@@ -39,7 +39,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     sync_sqladmin_db_helper.dispose()  # Admin db engine dispose
 
 # ORJSONResponse to increase performance
-main_app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)
+main_app = FastAPI(
+    lifespan=lifespan,
+    default_response_class=ORJSONResponse,
+    title="Currency Transfer Rules API",
+    description="API for querying provider's money-transfer rules",
+)
 
 # SQLAdmin
 admin = Admin(main_app, engine=db_helper.engine, authentication_backend=sqladmin_authentication_backend)

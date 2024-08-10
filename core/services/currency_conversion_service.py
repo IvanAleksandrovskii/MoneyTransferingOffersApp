@@ -1,8 +1,9 @@
+from fastapi.exceptions import ValidationException
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 from datetime import datetime, timedelta
 
-from core import logger
+from core import logger, settings
 from core.models import Currency, TransferProvider, ProviderExchangeRate
 
 
@@ -10,7 +11,7 @@ class CurrencyConversionService:
     # TODO: Idea to cache USD currency object to avoid multiple queries
     _usd_currency_cache = None
     _usd_cache_time = None
-    _cache_duration = timedelta(hours=1)  # Cache for 1 hour
+    _cache_duration = timedelta(seconds=settings.cache.usd_currency_cache_sec)
 
     @staticmethod
     async def convert_amount(
@@ -21,6 +22,12 @@ class CurrencyConversionService:
             provider: TransferProvider
     ) -> tuple[float, float, list[str]]:
         original_amount = round(amount, 2)
+
+        if amount <= 0:
+            raise ValidationException("Amount must be greater than zero")
+
+        if not from_currency or not to_currency:
+            raise ValidationException("Currency not provided")
 
         if to_currency.id == from_currency.id:
             logger.info(f"No conversion needed: {from_currency.abbreviation} to {to_currency.abbreviation}")
