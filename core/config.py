@@ -36,6 +36,11 @@ SQLADMIN_USERNAME = os.getenv("SQLADMIN_USERNAME", "admin")
 SQLADMIN_PASSWORD = os.getenv("SQLADMIN_PASSWORD", "password")
 
 
+# Cache ENV variables
+USD_CURRENCY_CACHE_SEC = int(os.getenv("USD_CURRENCY_CACHE_SEC", 3600))
+OBJECTS_CACHE_SEC = int(os.getenv("OBJECTS_CACHE_SEC", 60))
+
+
 class RunConfig(BaseModel):
     host: str = APP_RUN_HOST
     port: int = APP_RUN_PORT
@@ -69,11 +74,17 @@ class SQLAdminConfig(BaseModel):
     password: str = SQLADMIN_PASSWORD
 
 
+class CacheConfig(BaseModel):
+    usd_currency_cache_sec: int = USD_CURRENCY_CACHE_SEC
+    objects_cache_sec: int = OBJECTS_CACHE_SEC
+
+
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     api_prefix: APIPrefixConfig = APIPrefixConfig()
     db: DBConfig = DBConfig()
     admin_panel: SQLAdminConfig = SQLAdminConfig()
+    cache: CacheConfig = CacheConfig()
 
 
 settings = Settings()
