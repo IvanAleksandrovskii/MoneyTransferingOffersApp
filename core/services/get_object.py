@@ -27,7 +27,7 @@ async def get_object_by_id(session: AsyncSession, model, _id: UUID):
         logger.info(f"Retrieved {model.__name__} {_id} from cache")
         return model(**cached_obj)
 
-    query = model.active().filter(model.id == _id)
+    query = model.active().filter(model.id == _id)  # Filters for active only by model.active()
 
     if model == Country:
         query = query.options(joinedload(Country.local_currency))
@@ -42,6 +42,5 @@ async def get_object_by_id(session: AsyncSession, model, _id: UUID):
         await cache.set(cache_key, obj_dict)  # Cache the serialized dictionary
     else:
         logger.warning(f"Active {model.__name__} not found for id: {_id}")
-        raise HTTPException(model.__name__, str(_id))
-
+        raise HTTPException(status_code=404, detail=f"{model.__name__} not found with id: {_id}")
     return obj
