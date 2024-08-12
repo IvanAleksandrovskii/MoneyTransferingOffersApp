@@ -28,6 +28,9 @@ async def get_transfer_rules(
     optional_amount: Optional[float] = Query(None, description="Amount to transfer", gt=0),
     session: AsyncSession = Depends(db_helper.session_getter)
 ):
+    """
+    Get filtered transfer rules based on sending and receiving countries, optional currency and amount.
+    """
     if not send_country_id or not receive_country_id:
         raise HTTPException(status_code=400, detail="Send country and receive country are required")
 
@@ -86,7 +89,7 @@ async def get_transfer_rules(
                         amount_received = round(converted_amount - transfer_fee, 2)
                     else:
                         logger.info(f"Rule {rule.id} excluded: converted amount {converted_amount} is outside transfer limits")
-                        continue
+                        continue  # If the query amount is not in the transfer limits, go to the next rule
                 else:
                     # Have currency but no amount
                     dummy_amount = 100  # Use dummy amount to calculate conversion
@@ -121,7 +124,7 @@ async def get_transfer_rules(
                     minutes=(rule.max_transfer_time.seconds % 3600) // 60
                 ),
                 transfer_method=rule.transfer_method,
-                required_documents=[DocumentResponse(name=doc.name) for doc in rule.required_documents],
+                required_documents=[DocumentResponse(id=doc.id, name=doc.name) for doc in rule.required_documents],
                 original_amount=optional_amount,
                 converted_amount=converted_amount,
                 transfer_currency=CurrencyResponse.model_validate(rule.transfer_currency),

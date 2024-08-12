@@ -63,7 +63,7 @@ async def get_document(
 
 @router.get("/documents", response_model=List[DocumentResponse], tags=["Global Objects"])
 async def get_all_documents(session: AsyncSession = Depends(db_helper.session_getter)):
-    query = Document.active()  # or filter for active only by Document.active() ?
+    query = Document.active()
     result = await session.execute(query)
     documents = result.scalars().all()
     return [DocumentResponse(id=doc.id, name=doc.name) for doc in documents]
