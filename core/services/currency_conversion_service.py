@@ -8,7 +8,10 @@ from core.models import Currency, TransferProvider, ProviderExchangeRate
 
 
 class CurrencyConversionService:
-    # TODO: Idea to cache USD currency object to avoid multiple queries
+    """
+    Service for currency conversion, stores USD conversion rate in cache to avoid multiple queries and
+    reduce the number of database queries. Loads cache memory at the same time.
+    """
     _usd_currency_cache = None
     _usd_cache_time = None
     _cache_duration = timedelta(seconds=settings.cache.usd_currency_cache_sec)
@@ -21,6 +24,19 @@ class CurrencyConversionService:
             to_currency: Currency,
             provider: TransferProvider
     ) -> tuple[float, float, list[str]]:
+        """
+        Convert amount from one currency to another
+        :param session: Async database session
+        :param amount: Amount to convert
+        :param from_currency: From currency object
+        :param to_currency: To currency object
+        :param provider: Transfer provider object
+        :return: Converted amount, exchange rate, conversion path (list of currency abbreviations used in the conversion)
+        """
+
+        if not amount:
+            raise ValidationException("Amount not provided")
+
         original_amount = round(amount, 2)
 
         if amount <= 0:
@@ -68,7 +84,11 @@ class CurrencyConversionService:
 
     @staticmethod
     async def _get_usd_currency(session: AsyncSession) -> Currency:
-        # TODO: Idea to cache USD currency object to avoid multiple queries
+        """
+        Get USD currency, to avoid multiple queries result stores in cache
+        :param session: Async database session
+        :return: USD currency object
+        """
         now = datetime.now()
         if (CurrencyConversionService._usd_currency_cache is None or
                 CurrencyConversionService._usd_cache_time is None or
