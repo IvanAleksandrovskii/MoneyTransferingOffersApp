@@ -1,5 +1,5 @@
-__all__ = ["Base", "db_helper", "Currency", "Country", "Document", "TransferProvider",
-           "ProviderExchangeRate", "TransferRule"]
+__all__ = ["Base", "db_helper", "Currency", "Country", "TransferProvider", "ProviderExchangeRate",
+           "Document", "TransferRule", "transfer_rule_documents"]
 
 
 from .base import Base
@@ -9,4 +9,4 @@ from .country import Country
 from .document import Document
 from .transfer_provider import TransferProvider
 from .exchange_rate import ProviderExchangeRate
-from .transfer_rule import TransferRule
+from .transfer_rule import TransferRule, transfer_rule_documents

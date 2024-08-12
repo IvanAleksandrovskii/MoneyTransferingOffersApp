@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Optional
 import uuid
 
-from sqlalchemy import ForeignKey, Float, String, Index, CheckConstraint, Table, Column, Interval
+from sqlalchemy import ForeignKey, Float, String, Index, CheckConstraint, Table, Column, Interval, PrimaryKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from core.models import Base
@@ -15,8 +15,9 @@ from core.models.transfer_provider import TransferProvider
 transfer_rule_documents = Table(
     'transfer_rule_documents',
     Base.metadata,
-    Column('transfer_rule_id', ForeignKey('transfer_rules.id'), primary_key=True),
-    Column('document_id', ForeignKey('documents.id'), primary_key=True)
+    Column('transfer_rule_id', ForeignKey('transfer_rules.id')),
+    Column('document_id', ForeignKey('documents.id')),
+    PrimaryKeyConstraint('transfer_rule_id', 'document_id', name='pk_transfer_rule_document')
 )
 
 
