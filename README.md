@@ -154,7 +154,7 @@ For all endpoints that require an ID, you'll need to provide the UUID of the ite
 The API will return detailed information about the requested item or a list of items, depending on the endpoint.
 
 ## Swagger UI Documentation
-For an interactive API documentation experience, you can access the Swagger UI by navigating to /docs in your browser
+For an interactive API documentation experience, you can access the Swagger UI by navigating to `/docs` in your browser
 when the application is running. This provides a user-friendly interface to explore and test all available endpoints.
 
 ## Admin Panel
