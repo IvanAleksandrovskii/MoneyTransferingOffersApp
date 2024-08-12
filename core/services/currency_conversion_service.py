@@ -1,4 +1,3 @@
-from fastapi.exceptions import ValidationException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
@@ -37,15 +36,12 @@ class CurrencyConversionService:
 
         # Input validation
         if not amount:
-            raise ValidationException("Amount not provided")
-
+            raise HTTPException(status_code=400, detail="Amount not provided")
         original_amount = round(amount, 2)
-
         if amount <= 0:
-            raise ValidationException("Amount must be greater than zero")
-
+            raise HTTPException(status_code=400, detail="Amount must be greater than zero")
         if not from_currency or not to_currency:
-            raise ValidationException("Currency not provided")
+            raise HTTPException(status_code=400, detail="Currency not provided")
 
         # Check if conversion is needed
         if to_currency.id == from_currency.id:
@@ -65,8 +61,8 @@ class CurrencyConversionService:
             converted_amount = round(original_amount * direct_rate, 2)
             exchange_rate = round(direct_rate, 4)
             conversion_path = [from_currency.abbreviation, to_currency.abbreviation]
-            logger.info(
-                f"Direct conversion successful: {original_amount} {from_currency.abbreviation} = {converted_amount} {to_currency.abbreviation}")
+            logger.info(f"Direct conversion successful: {original_amount} {from_currency.abbreviation} = "
+                        f"{converted_amount} {to_currency.abbreviation}")
             return converted_amount, exchange_rate, conversion_path
 
         # If direct conversion is not available, try USD as an intermediate currency
