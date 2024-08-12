@@ -112,8 +112,9 @@ Here's a breakdown of what you can do (swagger is available, check `/docs`):
 For all endpoints that require an ID, you'll need to provide the UUID of the item you're looking for. 
 The API will return detailed information about the requested item or a list of items, depending on the endpoint.
 
-If you need more detailed information about the structure of the responses or have any questions about using these 
-endpoints, please refer to our detailed API documentation `/docs`.
+## Swagger UI Documentation
+For an interactive API documentation experience, you can access the Swagger UI by navigating to /docs in your browser
+when the application is running. This provides a user-friendly interface to explore and test all available endpoints.
 
 ## Admin Panel
 The admin panel is available at `/admin`. Use the credentials specified in the `.env` file to log in.
