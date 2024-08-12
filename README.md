@@ -8,7 +8,6 @@ It includes functionality for currency conversion, exchange rate management, and
 - Transfer rule querying
 - Admin panel for data management
 - Transfer provider management
-- Exchange rate tracking
 
 ## Technologies Used
 - FastAPI
