@@ -103,7 +103,7 @@ async def get_transfer_rule(transfer_rule_id: UUID, session: AsyncSession = Depe
     )
     try:
         result = await session.execute(query)
-        transfer_rule = result.scalar_one_or_none()
+        transfer_rule = result.unique().scalar_one_or_none()
     except SQLAlchemyError as e:
         logger.exception(e)
         raise HTTPException(status_code=500, detail="Internal server error")
