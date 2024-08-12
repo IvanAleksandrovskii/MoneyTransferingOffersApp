@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import HTTPException
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core import logger, cache
@@ -35,11 +36,12 @@ async def get_object_by_id(session: AsyncSession, model, _id: UUID):
 
     query = model.active().filter(model.id == _id)  # Filters for active only by model.active()
 
-    # if model == Country:
-    #     query = query.options(joinedload(Country.local_currency))
-
-    result = await session.execute(query)
-    obj = result.unique().scalar_one_or_none()
+    try:
+        result = await session.execute(query)
+        obj = result.unique().scalar_one_or_none()
+    except SQLAlchemyError as e:
+        logger.exception(f"Error retrieving {model.__name__} with id: {_id}, detail={str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving {model.__name__} with id: {_id}")
 
     if obj:
         logger.info(f"Found active {model.__name__}: {obj.id}")

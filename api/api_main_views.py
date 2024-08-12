@@ -2,11 +2,12 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from core import logger
-from core.models import db_helper, Currency, Country, TransferRule
+from core.models import db_helper, Currency, Country, TransferRule, TransferProvider, Document
 from core.schemas import (
     OptimizedTransferRuleResponse, TransferRuleDetails,
     CurrencyResponse, CountryResponse, ProviderResponse,
@@ -40,19 +41,26 @@ async def get_transfer_rules(
         TransferRule.active()
         .filter(
             TransferRule.send_country_id == send_country_id,
-            TransferRule.receive_country_id == receive_country_id
+            TransferRule.receive_country_id == receive_country_id,
+            TransferRule.provider.has(TransferProvider.is_active == True),
+            TransferRule.send_country.has(Country.is_active == True),
+            TransferRule.receive_country.has(Country.is_active == True),
+            TransferRule.transfer_currency.has(Currency.is_active == True)
         )
         .options(
-            joinedload(TransferRule.send_country).joinedload(Country.local_currency),
-            joinedload(TransferRule.receive_country).joinedload(Country.local_currency),
-            joinedload(TransferRule.provider),
-            joinedload(TransferRule.transfer_currency),
-            joinedload(TransferRule.required_documents)
+            joinedload(TransferRule.send_country).joinedload(Country.local_currency.and_(Currency.is_active == True)),
+            joinedload(TransferRule.receive_country).joinedload(Country.local_currency.and_(Currency.is_active == True)),
+            joinedload(TransferRule.provider.and_(TransferProvider.is_active == True)),
+            joinedload(TransferRule.transfer_currency.and_(Currency.is_active == True)),
+            joinedload(TransferRule.required_documents.and_(Document.is_active == True))
         )
     )
-
-    result = await session.execute(query)
-    rules = result.unique().scalars().all()
+    try:
+        result = await session.execute(query)
+        rules = result.unique().scalars().all()
+    except SQLAlchemyError as e:
+        logger.error(f"Failed to get transfer rules: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to get transfer rules")
 
     if not rules:
         logger.warning(f"No active transfer rules found for countries: from {send_country_id} to {receive_country_id}")
@@ -73,6 +81,9 @@ async def get_transfer_rules(
                     if not from_currency:
                         logger.warning(f"From currency not found: {optional_from_currency_id}")
                         continue  # Skip this rule, go to the next one
+                    if not from_currency.is_active:
+                        logger.warning(f"From currency is inactive: {from_currency.id}")
+                        raise HTTPException(status_code=404, detail="From currency is inactive")
 
                 if optional_amount is not None:
                     converted_amount, exchange_rate, conversion_path = await CurrencyConversionService.convert_amount(
@@ -144,11 +155,11 @@ async def get_transfer_rules(
         except Exception as e:
             logger.error(f"Unexpected error processing rule {rule.id}: {str(e)}", exc_info=True)
 
-        logger.info(f"Found {len(rule_details)} valid transfer rules after processing")
+    if not rule_details:
+        logger.warning("No valid transfer rules found for the specified parameters")
+        raise HTTPException(status_code=404, detail="No valid transfer rules found for the specified parameters")
 
-        if not rule_details:
-            logger.warning("No valid transfer rules found for the specified parameters")
-            raise HTTPException(status_code=404, detail="No valid transfer rules found for the specified parameters")
+    logger.info(f"Returning {len(rule_details)} transfer rules")
 
     return OptimizedTransferRuleResponse(
         send_country=CountryResponse.model_validate(rules[0].send_country),

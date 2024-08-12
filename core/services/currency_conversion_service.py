@@ -1,4 +1,5 @@
 from fastapi.exceptions import ValidationException
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 from datetime import datetime, timedelta
@@ -93,10 +94,13 @@ class CurrencyConversionService:
         if (CurrencyConversionService._usd_currency_cache is None or
                 CurrencyConversionService._usd_cache_time is None or
                 now - CurrencyConversionService._usd_cache_time > CurrencyConversionService._cache_duration):
-
-            # Use the .active() method to ensure we only get active USD currency
-            usd_currency = await session.execute(Currency.active().filter(Currency.abbreviation == "USD"))
-            usd_currency = usd_currency.scalar_one_or_none()
+            try:
+                # Use the .active() method to ensure we only get active USD currency
+                usd_currency = await session.execute(Currency.active().filter(Currency.abbreviation == "USD"))
+                usd_currency = usd_currency.scalar_one_or_none()
+            except SQLAlchemyError as e:
+                logger.error(f"Database error: {str(e)}")
+                raise HTTPException(status_code=500, detail="Internal server error")
             if not usd_currency:
                 raise HTTPException(status_code=404, detail="Active USD currency not found in the database")
 
@@ -118,6 +122,10 @@ class CurrencyConversionService:
                 ProviderExchangeRate.to_currency_id.in_(currency_ids)
             )
         )
-        result = await session.execute(query)
-        rates = result.scalars().all()
+        try:
+            result = await session.execute(query)
+            rates = result.scalars().all()
+        except SQLAlchemyError as e:
+            logger.error(f"Database error: {str(e)}")
+            raise HTTPException(status_code=500, detail="Internal server error")
         return {(rate.from_currency_id, rate.to_currency_id): rate.rate for rate in rates}
