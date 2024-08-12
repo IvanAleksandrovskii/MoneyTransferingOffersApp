@@ -2,15 +2,21 @@ from uuid import UUID
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
 from core import logger, cache
-from core.models import Country
+
+# from sqlalchemy.orm import joinedload
+# from core.models import Country
+
+
+"""
+Method down below is used now only with MAIN endpoint to get the currency object.
+"""
 
 
 async def get_object_by_id(session: AsyncSession, model, _id: UUID):
     """
-    Retrieve an active object by its ID, using cache if available.
+    Retrieve an active object by its ID, using cache if available. Used only for MAIN endpoint (!)
 
     :param session: The database session
     :param model: The SQLAlchemy model class
@@ -29,8 +35,8 @@ async def get_object_by_id(session: AsyncSession, model, _id: UUID):
 
     query = model.active().filter(model.id == _id)  # Filters for active only by model.active()
 
-    if model == Country:
-        query = query.options(joinedload(Country.local_currency))
+    # if model == Country:
+    #     query = query.options(joinedload(Country.local_currency))
 
     result = await session.execute(query)
     obj = result.unique().scalar_one_or_none()
