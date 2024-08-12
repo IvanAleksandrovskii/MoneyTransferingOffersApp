@@ -49,8 +49,8 @@ main_app = FastAPI(
 # SQLAdmin
 admin = Admin(main_app, engine=async_sqladmin_db_helper.engine, authentication_backend=sqladmin_authentication_backend)
 
-admin.add_view(CountryAdmin)
 admin.add_view(CurrencyAdmin)
+admin.add_view(CountryAdmin)
 admin.add_view(DocumentAdmin)
 admin.add_view(TransferProviderAdmin)
 admin.add_view(ProviderExchangeRateAdmin)
