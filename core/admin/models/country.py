@@ -9,11 +9,15 @@ from core.models import Country
 
 
 class CountryAdmin(BaseAdminModel, model=Country):
-    column_list = BaseAdminModel.column_list + [Country.name, Country.local_currency_id]
+    # This is an all-country part
+    column_list = [Country.name, ] + BaseAdminModel.column_list + [Country.local_currency_id, ]
     column_searchable_list = [Country.name, Country.abbreviation]
     column_sortable_list = BaseAdminModel.column_sortable_list + [Country.name, Country.abbreviation]
     column_filters = BaseAdminModel.column_filters + [Country.name, Country.abbreviation, Country.local_currency_id]
     form_columns = ['name', 'abbreviation', 'local_currency', 'is_active']
+    column_formatters = {
+        'local_currency': lambda m, a: str(m.local_currency)
+    }
     form_args = {
         'name': {
             'validators': [validators.DataRequired(), validators.Length(min=1, max=100)]

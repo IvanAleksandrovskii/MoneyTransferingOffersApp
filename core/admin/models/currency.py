@@ -5,11 +5,12 @@ from core.models import Currency
 
 
 class CurrencyAdmin(BaseAdminModel, model=Currency):
-    column_list = BaseAdminModel.column_list + [Currency.abbreviation, Currency.name, Currency.symbol]
+    column_list = [Currency.abbreviation, Currency.name, Currency.symbol] + BaseAdminModel.column_list
     column_searchable_list = [Currency.name, Currency.abbreviation]
     column_sortable_list = BaseAdminModel.column_sortable_list + [Currency.name, Currency.abbreviation]
     column_filters = BaseAdminModel.column_filters + [Currency.name, Currency.abbreviation]
-    form_excluded_columns = ['countries']
+    # form_excluded_columns = ['countries']
+    form_columns = ['name', 'abbreviation', 'symbol', 'is_active']
     form_args = {
         'abbreviation': {
             'validators': [validators.DataRequired(), validators.Length(min=1, max=3)]

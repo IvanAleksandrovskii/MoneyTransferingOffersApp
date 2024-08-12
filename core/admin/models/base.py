@@ -11,7 +11,7 @@ from core.admin import sync_sqladmin_db_helper
 
 
 class BaseAdminModel(ModelView):
-    column_list = ['id', 'is_active']
+    column_list = ['is_active', 'id']
     column_sortable_list = ['is_active']
     column_filters = ['is_active']
     page_size = 50

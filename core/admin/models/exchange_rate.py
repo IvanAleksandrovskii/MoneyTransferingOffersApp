@@ -6,9 +6,7 @@ from core.models import ProviderExchangeRate
 
 
 class ProviderExchangeRateAdmin(BaseAdminModel, model=ProviderExchangeRate):
-    column_list = BaseAdminModel.column_list + [
-        "formatted_exchange_rate",
-        ProviderExchangeRate.rate,
+    column_list = ["formatted_exchange_rate", ProviderExchangeRate.rate, ] + BaseAdminModel.column_list + [
         ProviderExchangeRate.last_updated,
         ProviderExchangeRate.provider_id,
         ProviderExchangeRate.from_currency_id,
@@ -16,7 +14,10 @@ class ProviderExchangeRateAdmin(BaseAdminModel, model=ProviderExchangeRate):
     ]
     column_formatters = {
         "last_updated": lambda m, a: m.last_updated.strftime("%Y-%m-%d %H:%M:%S") if m.last_updated else "",
-        "formatted_exchange_rate": format_exchange_rate
+        "formatted_exchange_rate": format_exchange_rate,
+        "provider": lambda m, a: str(m.provider),
+        "from_currency": lambda m, a: str(m.from_currency),
+        "to_currency": lambda m, a: str(m.to_currency),
     }
     column_sortable_list = BaseAdminModel.column_sortable_list + [ProviderExchangeRate.rate,
                                                                   ProviderExchangeRate.last_updated]
@@ -25,7 +26,8 @@ class ProviderExchangeRateAdmin(BaseAdminModel, model=ProviderExchangeRate):
         ProviderExchangeRate.from_currency_id,
         ProviderExchangeRate.to_currency_id
     ]
-    form_excluded_columns = ["last_updated"]
+    # form_excluded_columns = ["last_updated"]
+    form_columns = ["provider", "from_currency", "to_currency", "rate", "is_active"]
     form_args = {
         'rate': {
             'validators': [validators.DataRequired(), validators.NumberRange(min=0)]
