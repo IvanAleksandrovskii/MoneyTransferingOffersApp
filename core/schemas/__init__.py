@@ -1,7 +1,6 @@
 __all__ = ["ProviderResponse", "CurrencyResponse", "CountryResponse", "ExchangeRateResponse",
            "TransferRuleDetails", "GenericObjectResponse", "DetailedTransferRuleResponse",
-           "OptimizedTransferRuleResponse", "DocumentResponse", "TimeDeltaInfo",
-           "ProviderTransferRulesResponse", "DetailedTransferRuleResponseNoProviderVersion"]
+           "OptimizedTransferRuleResponse", "DocumentResponse", "TimeDeltaInfo", ]
 
 
 from .country import CountryResponse
@@ -12,5 +11,3 @@ from .transfer_rule import TransferRuleDetails, DetailedTransferRuleResponse, Op
 from .exchange_rate import ExchangeRateResponse
 from .generic_obj_response import GenericObjectResponse
 from .time_delta_info import TimeDeltaInfo
-from .provider_for_transfer_rule_response import ProviderTransferRulesResponse
-from .transfer_rule import DetailedTransferRuleResponseNoProviderVersion
