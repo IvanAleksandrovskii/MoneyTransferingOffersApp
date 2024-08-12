@@ -1,5 +1,4 @@
 from typing import Any
-from urllib.parse import urlencode
 
 from sqladmin import ModelView
 from sqlalchemy import select
@@ -7,7 +6,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
 from wtforms import SelectMultipleField, validators
 from wtforms.widgets import ListWidget, CheckboxInput
 
@@ -17,11 +15,14 @@ from core.models import TransferRule, Document
 
 
 class TransferRuleAdmin(ModelView, model=TransferRule):
+    """
+    Admin interface for managing TransferRule objects.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__()
-        # self._processing = False
 
+    # Define which columns to display in the list view
     column_list = [
         "formatted_transfer_rule",
         TransferRule.fee_percentage,
@@ -35,6 +36,7 @@ class TransferRuleAdmin(ModelView, model=TransferRule):
         TransferRule.max_transfer_amount,
     ]
 
+    # Custom formatters for displaying data in the list view
     column_formatters = {
         "formatted_transfer_rule": lambda m, a:
         f"{m.provider.name} - {m.send_country.abbreviation} - {m.receive_country.abbreviation} - "
@@ -46,12 +48,14 @@ class TransferRuleAdmin(ModelView, model=TransferRule):
         "transfer_currency": lambda m, a: str(m.transfer_currency),
     }
 
+    # Define which fields to include in the create/edit form
     form_columns = [
         'provider', 'send_country', 'receive_country', 'transfer_currency',
         'fee_percentage', 'min_transfer_amount', 'max_transfer_amount',
         'transfer_method', 'min_transfer_time', 'max_transfer_time', 'required_documents', 'is_active'
     ]
 
+    # Add validators to form fields
     form_args = {
         'send_country': {'validators': [validators.DataRequired()]},
         'receive_country': {'validators': [validators.DataRequired()]},
@@ -60,6 +64,9 @@ class TransferRuleAdmin(ModelView, model=TransferRule):
     }
 
     async def scaffold_form(self):
+        """
+        Customize the form by adding a multi-select field for required documents.
+        """
         form_class = await super().scaffold_form()
         form_class.required_documents = SelectMultipleField(
             'Required Documents',
@@ -71,11 +78,17 @@ class TransferRuleAdmin(ModelView, model=TransferRule):
         return form_class
 
     def _coerce_document(self, value):
+        """
+        Convert document id to string for proper form handling.
+        """
         if hasattr(value, 'id'):
             return str(value.id)
         return str(value)
 
     async def _get_document_choices(self):
+        """
+        Fetch active documents to populate the multi-select field.
+        """
         async with AsyncSession(async_sqladmin_db_helper.engine) as session:
             try:
                 result = await session.execute(select(Document).where(Document.is_active == True))
@@ -85,6 +98,9 @@ class TransferRuleAdmin(ModelView, model=TransferRule):
                 await session.close()
 
     async def get_one(self, _id):
+        """
+        Retrieve a single TransferRule instance with related documents.
+        """
         async with AsyncSession(async_sqladmin_db_helper.engine) as session:
             try:
                 stmt = select(TransferRule).options(
@@ -96,12 +112,19 @@ class TransferRuleAdmin(ModelView, model=TransferRule):
                 await session.close()
 
     async def edit_form(self, obj):
+        """
+        Populate the edit form with existing data, including selected documents.
+        """
         form = await super().edit_form(obj)
         if obj and obj.required_documents:
             form.required_documents.data = [str(doc.id) for doc in obj.required_documents]
         return form
 
     async def insert_model(self, request: Request, data: dict) -> Any:
+        """
+        Custom insert method to handle creation or update of TransferRule instances.
+        Implements upsert logic based on unique constraints.
+        """
         logger.info("Custom insert_model method called")
         async with AsyncSession(async_sqladmin_db_helper.engine) as session:
             try:
@@ -155,11 +178,17 @@ class TransferRuleAdmin(ModelView, model=TransferRule):
                 raise
 
     def get_save_redirect_url(self, request: Request, obj: Any, is_created: bool) -> str:
+        """
+        Determine the redirect URL after saving a TransferRule.
+        """
         if is_created:
-            return request.url_for("admin:list", identity=self.identity)
-        return request.url_for("admin:detail", identity=self.identity, pk=obj.id)
+            return str(request.url_for("admin:list", identity=self.identity))
+        return str(request.url_for("admin:detail", identity=self.identity, pk=obj.id))
 
     async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
+        """
+        Log information after a TransferRule is created or updated.
+        """
         if is_created:
             logger.info("Created transfer rule successfully")
         else:

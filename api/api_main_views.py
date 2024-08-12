@@ -20,7 +20,6 @@ from core.services import get_object_by_id
 router = APIRouter()
 
 
-# TODO: Make endpoint turning back only countries matches the given one for existing transfer rules
 @router.get("/transfer-rules-filtered", response_model=OptimizedTransferRuleResponse)
 async def get_transfer_rules(
     send_country_id: UUID = Query(..., description="ID of the sending country"),
@@ -37,6 +36,7 @@ async def get_transfer_rules(
 
     logger.info(f"Searching for transfer rules: from {send_country_id} to {receive_country_id}")
 
+    # Construct the base query with all necessary joins
     query = (
         TransferRule.active()
         .filter(
@@ -75,6 +75,8 @@ async def get_transfer_rules(
         try:
             logger.info(f"Processing rule {rule.id}")
             logger.info(f"min_transfer_time: {rule.min_transfer_time}, max_transfer_time: {rule.max_transfer_time}")
+
+            # Process optional currency and amount if provided
             if optional_from_currency_id is not None:
                 if from_currency is None:
                     from_currency = await get_object_by_id(session, Currency, optional_from_currency_id)
@@ -86,6 +88,7 @@ async def get_transfer_rules(
                         raise HTTPException(status_code=404, detail="From currency is inactive")
 
                 if optional_amount is not None:
+                    # Perform currency conversion
                     converted_amount, exchange_rate, conversion_path = await CurrencyConversionService.convert_amount(
                         session=session,
                         amount=optional_amount,
@@ -94,6 +97,7 @@ async def get_transfer_rules(
                         provider=rule.provider
                     )
 
+                    # Check if the converted amount is within the transfer limits
                     if rule.min_transfer_amount <= converted_amount <= rule.max_transfer_amount:
                         fee_percentage = rule.fee_percentage / 100
                         transfer_fee = round(converted_amount * fee_percentage, 2)
@@ -102,8 +106,8 @@ async def get_transfer_rules(
                         logger.info(f"Rule {rule.id} excluded: converted amount {converted_amount} is outside transfer limits")
                         continue  # If the query amount is not in the transfer limits, go to the next rule
                 else:
-                    # Have currency but no amount
-                    dummy_amount = 100  # Use dummy amount to calculate conversion
+                    # Have currency but no amount, use dummy amount for exchange rate calculation
+                    dummy_amount = 100
                     _, exchange_rate, conversion_path = await CurrencyConversionService.convert_amount(
                         session=session,
                         amount=dummy_amount,
@@ -115,12 +119,14 @@ async def get_transfer_rules(
                     amount_received = None
                     transfer_fee = None
             else:
+                # No currency conversion needed
                 converted_amount = None
                 amount_received = None
                 transfer_fee = None
                 exchange_rate = None
                 conversion_path = [rule.transfer_currency.abbreviation]
 
+            # Construct TransferRuleDetails object
             rule_detail = TransferRuleDetails(
                 id=rule.id,
                 provider=ProviderResponse.model_validate(rule.provider),
@@ -161,6 +167,7 @@ async def get_transfer_rules(
 
     logger.info(f"Returning {len(rule_details)} transfer rules")
 
+    # Construct and return the final response
     return OptimizedTransferRuleResponse(
         send_country=CountryResponse.model_validate(rules[0].send_country),
         receive_country=CountryResponse.model_validate(rules[0].receive_country),

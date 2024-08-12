@@ -35,6 +35,7 @@ class CurrencyConversionService:
         :return: Converted amount, exchange rate, conversion path (list of currency abbreviations used in the conversion)
         """
 
+        # Input validation
         if not amount:
             raise ValidationException("Amount not provided")
 
@@ -46,6 +47,7 @@ class CurrencyConversionService:
         if not from_currency or not to_currency:
             raise ValidationException("Currency not provided")
 
+        # Check if conversion is needed
         if to_currency.id == from_currency.id:
             logger.info(f"No conversion needed: {from_currency.abbreviation} to {to_currency.abbreviation}")
             return original_amount, 1.0, [from_currency.abbreviation]
@@ -57,7 +59,7 @@ class CurrencyConversionService:
             session, provider.id, [from_currency.id, to_currency.id, usd_currency.id]
         )
 
-        # Try direct conversion
+        # Try direct conversion first
         direct_rate = exchange_rates.get((from_currency.id, to_currency.id))
         if direct_rate:
             converted_amount = round(original_amount * direct_rate, 2)
@@ -67,7 +69,7 @@ class CurrencyConversionService:
                 f"Direct conversion successful: {original_amount} {from_currency.abbreviation} = {converted_amount} {to_currency.abbreviation}")
             return converted_amount, exchange_rate, conversion_path
 
-        # Try USD-middle conversion
+        # If direct conversion is not available, try USD as an intermediate currency
         rate_to_usd = exchange_rates.get((from_currency.id, usd_currency.id))
         rate_from_usd = exchange_rates.get((usd_currency.id, to_currency.id))
         if rate_to_usd and rate_from_usd:
@@ -79,8 +81,8 @@ class CurrencyConversionService:
                 f"USD conversion successful: {original_amount} {from_currency.abbreviation} = {converted_amount} {to_currency.abbreviation}")
             return converted_amount, exchange_rate, conversion_path
 
-        logger.error(
-            f"Unable to perform currency conversion from {from_currency.abbreviation} to {to_currency.abbreviation}")
+        # If no conversion path is found, raise an exception
+        logger.error(f"Unable to perform currency conversion from {from_currency.abbreviation} to {to_currency.abbreviation}")
         raise HTTPException(status_code=400, detail="Unable to perform currency conversion")
 
     @staticmethod
@@ -91,11 +93,12 @@ class CurrencyConversionService:
         :return: USD currency object
         """
         now = datetime.now()
+        # Check if cache is valid
         if (CurrencyConversionService._usd_currency_cache is None or
                 CurrencyConversionService._usd_cache_time is None or
                 now - CurrencyConversionService._usd_cache_time > CurrencyConversionService._cache_duration):
             try:
-                # Use the .active() method to ensure we only get active USD currency
+                # Fetch active USD currency from database
                 usd_currency = await session.execute(Currency.active().filter(Currency.abbreviation == "USD"))
                 usd_currency = usd_currency.scalar_one_or_none()
             except SQLAlchemyError as e:
@@ -104,6 +107,7 @@ class CurrencyConversionService:
             if not usd_currency:
                 raise HTTPException(status_code=404, detail="Active USD currency not found in the database")
 
+            # Update cache
             CurrencyConversionService._usd_currency_cache = usd_currency
             CurrencyConversionService._usd_cache_time = now
             logger.info("Active USD currency fetched from database and cached")
@@ -114,6 +118,13 @@ class CurrencyConversionService:
 
     @staticmethod
     async def _get_exchange_rates(session: AsyncSession, provider_id: str, currency_ids: list[str]) -> dict:
+        """
+        Fetch all relevant exchange rates in a single query
+        :param session: Async database session
+        :param provider_id: ID of the transfer provider
+        :param currency_ids: List of currency IDs to fetch rates for
+        :return: Dictionary of exchange rates
+        """
         query = (
             ProviderExchangeRate.active()
             .filter(

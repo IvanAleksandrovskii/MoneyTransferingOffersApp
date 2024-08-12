@@ -15,14 +15,7 @@ from core.models.currency import Currency
 from core.models.transfer_provider import TransferProvider
 
 
-# Middle-layer table for many-to-many relationship between TransferRule and Document
-# transfer_rule_documents = Table(
-#     'transfer_rule_documents',
-#     Base.metadata,
-#     Column('transfer_rule_id', ForeignKey('transfer_rules.id')),
-#     Column('document_id', ForeignKey('documents.id')),
-#     PrimaryKeyConstraint('transfer_rule_id', 'document_id', name='pk_transfer_rule_document')
-# )
+# Many-to-many relationship between TransferRule and Document middle-layer-table
 transfer_rule_documents = Table(
     'transfer_rule_documents',
     Base.metadata,
@@ -33,8 +26,7 @@ transfer_rule_documents = Table(
 
 
 class TransferRule(Base):
-    # TODO: What about adding more fields or improving the structure of this model? (?)
-    # TODO: Add methods for business logic, such as calculating fees, validating transfer amounts, etc.
+    # Foreign key relationships
     send_country_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("countries.id"), nullable=False)
     send_country: Mapped[Country] = relationship("Country", foreign_keys=[send_country_id], lazy="joined")
 
@@ -46,47 +38,45 @@ class TransferRule(Base):
     provider: Mapped[TransferProvider] = relationship("TransferProvider", foreign_keys=[provider_id],
                                                       back_populates="transfer_rules", lazy="joined")
 
-    # TODO: nullable=False? or not? could be null if no min or max? should we use default 0 value in that case?
-    # TODO: Same about max! What if we don't have max? So some validation errors could occur?
+    # Transfer details
     fee_percentage: Mapped[float] = mapped_column(Float, nullable=False)
-    min_transfer_amount: Mapped[float] = mapped_column(Float, nullable=False)  # TODO: nullable=False?
-    max_transfer_amount: Mapped[Optional[float]] = mapped_column(Float, nullable=False)  # TODO: nullable=False?
+    min_transfer_amount: Mapped[float] = mapped_column(Float, nullable=False)
+    max_transfer_amount: Mapped[Optional[float]] = mapped_column(Float, nullable=False)
 
-    # Info about transfer currency
+    # Transfer currency information
     transfer_currency_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("currencies.id"), nullable=False)
     transfer_currency: Mapped[Optional[Currency]] = relationship("Currency", foreign_keys=[transfer_currency_id],
                                                                  lazy="joined")
 
-    # Other fields here... What else can we add here? I mean, if we need it
-    # Online / Office
-    # Time transfer takes
-    # Documents needed
-    transfer_method: Mapped[str] = mapped_column(String, nullable=False)  # Online / Office TODO: maybe enum or binary?
-    # estimated_transfer_time: Mapped[Optional[str]] = mapped_column(String,
-    #                                                                nullable=True)  # Time transfer takes: hours/days etc.
-    #                                                        TODO: nullable=False (?) for estimated_transfer_time
+    # Additional transfer information
+    transfer_method: Mapped[str] = mapped_column(String, nullable=False)  # Online / Office / Need to call an operator, etc.. TODO: maybe enum or binary?
+
     min_transfer_time: Mapped[timedelta] = mapped_column(Interval, nullable=False)
     max_transfer_time: Mapped[timedelta] = mapped_column(Interval, nullable=False)
 
-    # required_documents: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # TODO: nullable=False (!)
-
+    # Many-to-many relationship with Document
     required_documents = relationship("Document", secondary=transfer_rule_documents,
                                       back_populates="transfer_rules", lazy="selectin")
 
     __table_args__ = (
+        # Indexes for improved query performance
         Index('idx_transfer_rule_send_country', 'send_country_id'),
         Index('idx_transfer_rule_receive_country', 'receive_country_id'),
         Index('idx_transfer_rule_provider', 'provider_id'),
         Index('idx_transfer_rule_currency', 'transfer_currency_id'),
+        # Constraints to ensure data integrity
         CheckConstraint('min_transfer_amount <= max_transfer_amount', name='check_min_max_transfer_amount'),
         CheckConstraint('fee_percentage >= 0 AND fee_percentage < 100', name='check_fee_percentage_range'),
+        # Ensure uniqueness of the transfer rule
         UniqueConstraint('send_country_id', 'receive_country_id', 'provider_id', 'transfer_currency_id',
                          name='uq_transfer_rule_unique_combination'),
     )
 
-    # TODO: Add more validation (?)
     @validates('fee_percentage', 'min_transfer_amount', 'max_transfer_amount')
     def validate_fields(self, key, value):
+        """
+        Validate the fee percentage and transfer amounts to ensure they are within acceptable ranges.
+        """
         if key == 'fee_percentage' and (value < 0 or value > 100):
             raise ValueError('fee_percentage must be between 0 and 100')
         if key in ['min_transfer_amount', 'max_transfer_amount'] and value < 0:
