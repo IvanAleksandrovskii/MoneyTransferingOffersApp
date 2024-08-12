@@ -13,6 +13,7 @@ from core.schemas import CurrencyResponse, CountryResponse, DocumentResponse
 router = APIRouter()
 
 
+# TODO: ADD PAGINATION FOR CURRENCIES AND COUNTRIES???
 @router.get("/currency/{currency_id}", response_model=CurrencyResponse, tags=["Global Objects"])
 async def get_currency(
         currency_id: UUID,

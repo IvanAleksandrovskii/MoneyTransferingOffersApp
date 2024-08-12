@@ -14,6 +14,7 @@ from core.schemas import ProviderResponse, ExchangeRateResponse, CurrencyRespons
 router = APIRouter()
 
 
+# TODO: ADD PAGINATION FOR EXCHANGE_RATES AND TRANSFER_RULES???
 @router.get("/all-providers", response_model=List[ProviderResponse])
 async def get_providers(session: AsyncSession = Depends(db_helper.session_getter)):
     query = (
