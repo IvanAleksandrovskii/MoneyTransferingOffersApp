@@ -1,5 +1,9 @@
+from typing import Any
+
+from starlette.requests import Request
 from wtforms import validators
 
+from core import logger
 from core.admin.models.base import BaseAdminModel
 from core.models import TransferProvider
 
@@ -28,3 +32,9 @@ class TransferProviderAdmin(BaseAdminModel, model=TransferProvider):
         },
     }
     category = "Providers"
+
+    async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
+        if is_created:
+            logger.info(f"Created transfer provider: {model.name}")
+        else:
+            logger.info(f"Updated transfer provider: {model.name}")

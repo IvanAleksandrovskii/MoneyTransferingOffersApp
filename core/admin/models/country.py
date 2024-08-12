@@ -36,5 +36,8 @@ class CountryAdmin(BaseAdminModel, model=Country):
     category = "Global"
     can_delete = False
 
-    async def on_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
-        logger.info(f"{'Created' if is_created else 'Updated'} country: {model.name}, abbreviation: {model.abbreviation}")
+    async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
+        if is_created:
+            logger.info(f"Created country: {model.name}, abbreviation: {model.abbreviation}")
+        else:
+            logger.info(f"Updated country: {model.name}, abbreviation: {model.abbreviation}")

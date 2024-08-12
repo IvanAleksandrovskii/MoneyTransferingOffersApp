@@ -1,5 +1,9 @@
+from typing import Any
+
+from starlette.requests import Request
 from wtforms import validators
 
+from core import logger
 from core.admin.models.base import BaseAdminModel
 from core.admin.services.formatting_for_models import format_exchange_rate
 from core.models import ProviderExchangeRate
@@ -35,3 +39,9 @@ class ProviderExchangeRateAdmin(BaseAdminModel, model=ProviderExchangeRate):
     }
     name = "Provider Exchange Rate"
     category = "Providers"
+
+    async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
+        if is_created:
+            logger.info("Created exchange rate successfully")
+        else:
+            logger.info("Updated exchange rate successfully")

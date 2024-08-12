@@ -1,5 +1,9 @@
+from typing import Any
+
+from starlette.requests import Request
 from wtforms import validators
 
+from core import logger
 from core.admin.models.base import BaseAdminModel
 from core.models import Document
 
@@ -25,3 +29,9 @@ class DocumentAdmin(BaseAdminModel, model=Document):
     name_plural = "Documents"
     can_delete = False
     category = "Global"
+
+    async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
+        if is_created:
+            logger.info(f"Created document: {model.name}")
+        else:
+            logger.info(f"Updated document: {model.name}")

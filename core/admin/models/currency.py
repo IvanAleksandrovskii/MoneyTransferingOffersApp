@@ -1,5 +1,12 @@
+from typing import Any
+
+from sqlalchemy.exc import IntegrityError
+from starlette import status
+from starlette.exceptions import HTTPException
+from starlette.requests import Request
 from wtforms import validators
 
+from core import logger
 from core.admin.models.base import BaseAdminModel
 from core.models import Currency
 
@@ -37,3 +44,26 @@ class CurrencyAdmin(BaseAdminModel, model=Currency):
     name_plural = "Currencies"
     category = "Global"
     can_delete = False
+
+    async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
+        try:
+            if is_created:
+                logger.info(f"Created currency: {model.name} ({model.abbreviation})")
+            else:
+                logger.info(f"Updated currency: {model.name} ({model.abbreviation})")
+        except IntegrityError as e:
+            await request.app.state.db.rollback()
+
+            # Unique constraint error
+            if "uq_currency_name" in str(e) or "uq_currency_abbreviation" in str(e) or "uq_currency_symbol" in str(e):
+                logger.warning(f"Attempt to create duplicate currency: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Currency with this name, abbreviation or symbol already exists"
+                )
+            else:
+                logger.exception(f"Unexpected IntegrityError occurred: {e}")
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            logger.exception(f"Unexpected error occurred in after_model_change: {e}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

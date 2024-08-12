@@ -1,17 +1,27 @@
 from typing import Any
+from urllib.parse import urlencode
 
+from sqladmin import ModelView
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from starlette.requests import Request
-from wtforms import SelectMultipleField
+from starlette.responses import RedirectResponse
+from wtforms import SelectMultipleField, validators
 from wtforms.widgets import ListWidget, CheckboxInput
 
 from core import logger
-from core.admin.models.base import BaseAdminModel
-from core.models import TransferRule, db_helper, Document
+from core.admin import async_sqladmin_db_helper
+from core.models import TransferRule, Document
 
 
-class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
+class TransferRuleAdmin(ModelView, model=TransferRule):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        # self._processing = False
+
     column_list = [
         "formatted_transfer_rule",
         TransferRule.fee_percentage,
@@ -26,7 +36,10 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
     ]
 
     column_formatters = {
-        "formatted_transfer_rule": lambda m, a: f"{m.provider.name} - {m.send_country.name} - {m.receive_country.name} - {m.transfer_currency.abbreviation if m.transfer_currency else 'Unknown'} - {m.min_transfer_amount} - {m.max_transfer_amount}",
+        "formatted_transfer_rule": lambda m, a:
+        f"{m.provider.name} - {m.send_country.abbreviation} - {m.receive_country.abbreviation} - "
+        f"{m.transfer_currency.abbreviation if m.transfer_currency else 'Unknown'} - {m.min_transfer_amount} - "
+        f"{m.max_transfer_amount}",
         "provider": lambda m, a: str(m.provider),
         "send_country": lambda m, a: str(m.send_country),
         "receive_country": lambda m, a: str(m.receive_country),
@@ -38,6 +51,13 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
         'fee_percentage', 'min_transfer_amount', 'max_transfer_amount',
         'transfer_method', 'min_transfer_time', 'max_transfer_time', 'required_documents', 'is_active'
     ]
+
+    form_args = {
+        'send_country': {'validators': [validators.DataRequired()]},
+        'receive_country': {'validators': [validators.DataRequired()]},
+        'provider': {'validators': [validators.DataRequired()]},
+        'transfer_currency': {'validators': [validators.DataRequired()]},
+    }
 
     async def scaffold_form(self):
         form_class = await super().scaffold_form()
@@ -56,7 +76,7 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
         return str(value)
 
     async def _get_document_choices(self):
-        async for session in db_helper.session_getter():
+        async with AsyncSession(async_sqladmin_db_helper.engine) as session:
             try:
                 result = await session.execute(select(Document).where(Document.is_active == True))
                 documents = result.scalars().all()
@@ -65,7 +85,7 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
                 await session.close()
 
     async def get_one(self, _id):
-        async for session in db_helper.session_getter():
+        async with AsyncSession(async_sqladmin_db_helper.engine) as session:
             try:
                 stmt = select(TransferRule).options(
                     selectinload(TransferRule.required_documents)
@@ -81,48 +101,66 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
             form.required_documents.data = [str(doc.id) for doc in obj.required_documents]
         return form
 
-    async def on_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
-        async with db_helper.session_factory() as session:
+    async def insert_model(self, request: Request, data: dict) -> Any:
+        logger.info("Custom insert_model method called")
+        async with AsyncSession(async_sqladmin_db_helper.engine) as session:
             try:
-                # Get the fresh model from the database
-                if is_created:
-                    fresh_model = TransferRule()
-                    session.add(fresh_model)
+                # Check if rule with same send_country, receive_country, provider, transfer_currency already exists
+                existing_rule = await session.execute(
+                    select(TransferRule).filter_by(
+                        send_country_id=data['send_country'],
+                        receive_country_id=data['receive_country'],
+                        provider_id=data['provider'],
+                        transfer_currency_id=data['transfer_currency']
+                    )
+                )
+                existing_rule = existing_rule.scalar_one_or_none()
+
+                if existing_rule:
+                    logger.info(f"Updating existing TransferRule with id: {existing_rule.id}")
+                    model = existing_rule
                 else:
-                    fresh_model = await session.get(TransferRule, model.id,
-                                                    options=[selectinload(TransferRule.required_documents)])
+                    logger.info("Creating new TransferRule")
+                    model = TransferRule()
+                    session.add(model)
 
-                if not fresh_model:
-                    raise ValueError(f"TransferRule with id {model.id} not found")
-
+                # Update Model Fields
                 for key, value in data.items():
                     if key == 'required_documents':
-                        new_doc_ids = set(self._coerce_document(doc_id) for doc_id in value)
-                        current_doc_ids = set(str(doc.id) for doc in fresh_model.required_documents)
-
-                        # Delete documents, which are not in the new set
-                        docs_to_remove = current_doc_ids - new_doc_ids
-                        for doc_id in docs_to_remove:
-                            doc = next((d for d in fresh_model.required_documents if str(d.id) == doc_id), None)
-                            if doc:
-                                fresh_model.required_documents.remove(doc)
-
-                        # Add new documents, check for duplicates
-                        docs_to_add = new_doc_ids - current_doc_ids
-                        for doc_id in docs_to_add:
-                            doc = await session.get(Document, doc_id)
-                            if doc:
-                                fresh_model.required_documents.append(doc)
-
+                        model.required_documents = []
+                        for doc_id in value:
+                            document = await session.get(Document, doc_id)
+                            if document:
+                                model.required_documents.append(document)
                     elif key in ['send_country', 'receive_country', 'provider', 'transfer_currency']:
-                        setattr(fresh_model, f"{key}_id", str(value))
+                        setattr(model, f"{key}_id", str(value))
                     else:
-                        setattr(fresh_model, key, value)
+                        setattr(model, key, value)
 
                 await session.commit()
+                await session.refresh(model)
+                logger.info(
+                    f"TransferRule {'updated' if existing_rule else 'created'} successfully with id: {model.id}")
+
+                return model
+
+            except IntegrityError as e:
+                await session.rollback()
+                logger.error(f"IntegrityError in insert_model: {str(e)}")
+                raise ValueError("A transfer rule with these parameters already exists.")
+
             except Exception as e:
                 await session.rollback()
-                logger.exception(f"Error in on_model_change: {str(e)}")
-                raise e
+                logger.error(f"Error in insert_model: {str(e)}")
+                raise
 
-        await super().on_model_change(data, fresh_model, is_created, request)
+    def get_save_redirect_url(self, request: Request, obj: Any, is_created: bool) -> str:
+        if is_created:
+            return request.url_for("admin:list", identity=self.identity)
+        return request.url_for("admin:detail", identity=self.identity, pk=obj.id)
+
+    async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
+        if is_created:
+            logger.info("Created transfer rule successfully")
+        else:
+            logger.info("Updated transfer rule successfully")

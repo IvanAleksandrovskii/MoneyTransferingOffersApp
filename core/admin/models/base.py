@@ -1,13 +1,12 @@
 from typing import Any
 
 from sqladmin import ModelView, action
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from core import logger
-from core.admin import sync_sqladmin_db_helper
+from core.admin import async_sqladmin_db_helper
 
 
 class BaseAdminModel(ModelView):
@@ -22,20 +21,20 @@ class BaseAdminModel(ModelView):
     async def get_form(self, form_class, obj: Any = None):
         return await super().get_form(form_class, obj)
 
-    def _process_action(self, request: Request, is_active: bool) -> None:
+    async def _process_action(self, request: Request, is_active: bool) -> None:
         pks = request.query_params.get("pks", "").split(",")
         if pks:
             try:
-                with Session(sync_sqladmin_db_helper.engine) as session:
+                async with AsyncSession(async_sqladmin_db_helper.engine) as session:
                     for pk in pks:
-                        model = session.get(self.model, pk)
+                        model = await session.get(self.model, pk)
                         if model:
                             model.is_active = is_active
-                    session.commit()
+                    await session.commit()
                 logger.info(f"Successfully {'activated' if is_active else 'deactivated'} {len(pks)} objects")
-            except SQLAlchemyError as e:
+            except Exception as e:
                 logger.error(f"An error occurred: {str(e)}")
-                session.rollback()
+                await session.rollback()
 
     @action(
         name="activate",
@@ -44,8 +43,8 @@ class BaseAdminModel(ModelView):
         add_in_detail=True,
         add_in_list=True,
     )
-    def activate(self, request: Request) -> RedirectResponse:
-        self._process_action(request, True)
+    async def activate(self, request: Request) -> RedirectResponse:
+        await self._process_action(request, True)
         return RedirectResponse(request.url_for("admin:list", identity=self.identity), status_code=302)
 
     @action(
@@ -55,6 +54,6 @@ class BaseAdminModel(ModelView):
         add_in_detail=True,
         add_in_list=True,
     )
-    def deactivate(self, request: Request) -> RedirectResponse:
-        self._process_action(request, False)
+    async def deactivate(self, request: Request) -> RedirectResponse:
+        await self._process_action(request, False)
         return RedirectResponse(request.url_for("admin:list", identity=self.identity), status_code=302)
