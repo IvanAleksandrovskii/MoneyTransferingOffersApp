@@ -5,6 +5,10 @@ from core import settings
 
 
 class SimpleCache:
+    """
+    Cache implementation that stores the data in memory to lower the db queries and query time.
+    Loads cache memory at the same time.
+    """
     def __init__(self):
         self._cache = {}
 
