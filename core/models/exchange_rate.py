@@ -26,7 +26,7 @@ class ProviderExchangeRate(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint('provider_id', 'from_currency_id', 'to_currency_id', name='uq_provider_currency_pair'),
+        UniqueConstraint('provider_id', 'from_currency_id', 'to_currency_id', name='uq_provider_from_to_currency'),
         Index('idx_provider_exchange_rate_provider', 'provider_id'),
         Index('idx_provider_exchange_rate_from_currency', 'from_currency_id'),
         Index('idx_provider_exchange_rate_to_currency', 'to_currency_id'),

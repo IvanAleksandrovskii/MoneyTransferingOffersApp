@@ -2,7 +2,11 @@ from datetime import timedelta
 from typing import Optional
 import uuid
 
-from sqlalchemy import ForeignKey, Float, String, Index, CheckConstraint, Table, Column, Interval, PrimaryKeyConstraint
+from sqlalchemy import (
+    ForeignKey, Float, String, Index,
+    CheckConstraint, Table, Column, Interval,
+    Integer, UniqueConstraint, UUID
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from core.models import Base
@@ -12,12 +16,19 @@ from core.models.transfer_provider import TransferProvider
 
 
 # Middle-layer table for many-to-many relationship between TransferRule and Document
+# transfer_rule_documents = Table(
+#     'transfer_rule_documents',
+#     Base.metadata,
+#     Column('transfer_rule_id', ForeignKey('transfer_rules.id')),
+#     Column('document_id', ForeignKey('documents.id')),
+#     PrimaryKeyConstraint('transfer_rule_id', 'document_id', name='pk_transfer_rule_document')
+# )
 transfer_rule_documents = Table(
     'transfer_rule_documents',
     Base.metadata,
-    Column('transfer_rule_id', ForeignKey('transfer_rules.id')),
-    Column('document_id', ForeignKey('documents.id')),
-    PrimaryKeyConstraint('transfer_rule_id', 'document_id', name='pk_transfer_rule_document')
+    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('transfer_rule_id', UUID(as_uuid=True), ForeignKey('transfer_rules.id'), nullable=False),
+    Column('document_id', UUID(as_uuid=True), ForeignKey('documents.id'), nullable=False)
 )
 
 
@@ -69,6 +80,8 @@ class TransferRule(Base):
         Index('idx_transfer_rule_currency', 'transfer_currency_id'),
         CheckConstraint('min_transfer_amount <= max_transfer_amount', name='check_min_max_transfer_amount'),
         CheckConstraint('fee_percentage >= 0 AND fee_percentage < 100', name='check_fee_percentage_range'),
+        UniqueConstraint('send_country_id', 'receive_country_id', 'provider_id', 'transfer_currency_id',
+                         name='uq_transfer_rule_unique_combination'),
     )
 
     # TODO: Add more validation (?)

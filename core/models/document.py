@@ -1,13 +1,14 @@
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.models import Base
+from .transfer_rule import transfer_rule_documents
 
 
 class Document(Base):
     __tablename__ = "documents"
 
     name: Mapped[str] = mapped_column(String, nullable=False)
-    transfer_rules = relationship("TransferRule", secondary="transfer_rule_documents",
+    transfer_rules = relationship("TransferRule", secondary=transfer_rule_documents,
                                   back_populates="required_documents", lazy="noload")
 
     def __str__(self) -> str:
