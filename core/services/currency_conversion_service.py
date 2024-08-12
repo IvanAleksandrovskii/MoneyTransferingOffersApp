@@ -1,3 +1,4 @@
+from async_lru import alru_cache
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
@@ -12,10 +13,6 @@ class CurrencyConversionService:
     Service for currency conversion, stores USD conversion rate in cache to avoid multiple queries and
     reduce the number of database queries. Loads cache memory at the same time.
     """
-    _usd_currency_cache = None
-    _usd_cache_time = None
-    _cache_duration = timedelta(seconds=settings.cache.usd_currency_cache_sec)
-
     @staticmethod
     async def convert_amount(
             session: AsyncSession,
@@ -82,35 +79,17 @@ class CurrencyConversionService:
         raise HTTPException(status_code=400, detail="Unable to perform currency conversion")
 
     @staticmethod
+    @alru_cache(maxsize=1, ttl=settings.cache.usd_currency_cache_sec)  # To make it infinite just delete "ttl=..."
     async def _get_usd_currency(session: AsyncSession) -> Currency:
-        """
-        Get USD currency, to avoid multiple queries result stores in cache
-        :param session: Async database session
-        :return: USD currency object
-        """
-        now = datetime.now()
-        # Check if cache is valid
-        if (CurrencyConversionService._usd_currency_cache is None or
-                CurrencyConversionService._usd_cache_time is None or
-                now - CurrencyConversionService._usd_cache_time > CurrencyConversionService._cache_duration):
-            try:
-                # Fetch active USD currency from database
-                usd_currency = await session.execute(Currency.active().filter(Currency.abbreviation == "USD"))
-                usd_currency = usd_currency.scalar_one_or_none()
-            except SQLAlchemyError as e:
-                logger.error(f"Database error: {str(e)}")
-                raise HTTPException(status_code=500, detail="Internal server error")
+        try:
+            usd_currency = await session.execute(Currency.active().filter(Currency.abbreviation == "USD"))
+            usd_currency = usd_currency.scalar_one_or_none()
             if not usd_currency:
                 raise HTTPException(status_code=404, detail="Active USD currency not found in the database")
-
-            # Update cache
-            CurrencyConversionService._usd_currency_cache = usd_currency
-            CurrencyConversionService._usd_cache_time = now
-            logger.info("Active USD currency fetched from database and cached")
-        else:
-            logger.info("Active USD currency retrieved from cache")
-
-        return CurrencyConversionService._usd_currency_cache
+            return usd_currency
+        except SQLAlchemyError as e:
+            logger.error(f"Database error: {str(e)}")
+            raise HTTPException(status_code=500, detail="Internal server error")
 
     @staticmethod
     async def _get_exchange_rates(session: AsyncSession, provider_id: str, currency_ids: list[str]) -> dict:
