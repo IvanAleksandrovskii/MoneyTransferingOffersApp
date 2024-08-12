@@ -1,12 +1,12 @@
-from typing import Any, AsyncGenerator
+from typing import Any
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from starlette.requests import Request
 from wtforms import SelectMultipleField
 from wtforms.widgets import ListWidget, CheckboxInput
 
+from core import logger
 from core.admin.models.base import BaseAdminModel
 from core.models import TransferRule, db_helper, Document
 
@@ -14,25 +14,29 @@ from core.models import TransferRule, db_helper, Document
 class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
     column_list = [
         "formatted_transfer_rule",
+        TransferRule.fee_percentage,
         TransferRule.is_active,
         TransferRule.id,
-        TransferRule.fee_percentage,
-        TransferRule.min_transfer_amount,
-        TransferRule.max_transfer_amount,
+        TransferRule.provider_id,
         TransferRule.send_country_id,
         TransferRule.receive_country_id,
         TransferRule.transfer_currency_id,
-        TransferRule.provider_id
+        TransferRule.min_transfer_amount,
+        TransferRule.max_transfer_amount,
     ]
 
     column_formatters = {
-        "formatted_transfer_rule": lambda m, a: f"{m.provider.name} - {m.send_country.name} - {m.receive_country.name} - {m.transfer_currency.abbreviation if m.transfer_currency else 'Unknown'} - {m.min_transfer_amount} - {m.max_transfer_amount}"
+        "formatted_transfer_rule": lambda m, a: f"{m.provider.name} - {m.send_country.name} - {m.receive_country.name} - {m.transfer_currency.abbreviation if m.transfer_currency else 'Unknown'} - {m.min_transfer_amount} - {m.max_transfer_amount}",
+        "provider": lambda m, a: str(m.provider),
+        "send_country": lambda m, a: str(m.send_country),
+        "receive_country": lambda m, a: str(m.receive_country),
+        "transfer_currency": lambda m, a: str(m.transfer_currency),
     }
 
     form_columns = [
-        'send_country', 'receive_country', 'provider', 'transfer_currency',
+        'provider', 'send_country', 'receive_country', 'transfer_currency',
         'fee_percentage', 'min_transfer_amount', 'max_transfer_amount',
-        'transfer_method', 'min_transfer_time', 'max_transfer_time', 'is_active', 'required_documents'
+        'transfer_method', 'min_transfer_time', 'max_transfer_time', 'required_documents', 'is_active'
     ]
 
     async def scaffold_form(self):
@@ -60,12 +64,12 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
             finally:
                 await session.close()
 
-    async def get_one(self, id):
+    async def get_one(self, _id):
         async for session in db_helper.session_getter():
             try:
                 stmt = select(TransferRule).options(
                     selectinload(TransferRule.required_documents)
-                ).filter_by(id=id)
+                ).filter_by(id=_id)
                 result = await session.execute(stmt)
                 return result.scalar_one_or_none()
             finally:
@@ -77,103 +81,48 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
             form.required_documents.data = [str(doc.id) for doc in obj.required_documents]
         return form
 
-    # async def on_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
-    #     async for session in db_helper.session_getter():
-    #         try:
-    #             # Get the fresh model from the database
-    #             # fresh_model = await session.get(TransferRule, model.id,
-    #             #                                 options=[selectinload(TransferRule.required_documents)])
-    #             if is_created:
-    #                 # Handle the creation of a new TransferRule object
-    #                 fresh_model = TransferRule()
-    #                 session.add(fresh_model)
-    #             else:
-    #                 # Get the fresh model from the database for updates
-    #                 fresh_model = await session.get(TransferRule, model.id,
-    #                                                 options=[selectinload(TransferRule.required_documents)])
-    #
-    #             if not fresh_model:
-    #                 raise ValueError(f"TransferRule with id {model.id} not found")
-    #
-    #             for key, value in data.items():
-    #                 if key == 'required_documents':
-    #                     current_doc_ids = set(str(doc.id) for doc in fresh_model.required_documents)
-    #                     new_doc_ids = set(self._coerce_document(doc_id) for doc_id in value)
-    #
-    #                     # Delete documents, which are not in the new set
-    #                     for doc_id in current_doc_ids - new_doc_ids:
-    #                         document = next((doc for doc in fresh_model.required_documents if str(doc.id) == doc_id),
-    #                                         None)
-    #                         if document:
-    #                             fresh_model.required_documents.remove(document)
-    #
-    #                     await session.flush()  # Force session to flush changes
-    #
-    #                     # Add new documents, check for duplicates
-    #                     for doc_id in new_doc_ids - current_doc_ids:
-    #                         if not any(str(doc.id) == doc_id for doc in fresh_model.required_documents):
-    #                             document = await session.get(Document, doc_id)
-    #                             if document:
-    #                                 fresh_model.required_documents.append(document)
-    #
-    #                 elif key in ['send_country', 'receive_country', 'provider', 'transfer_currency']:
-    #                     setattr(fresh_model, f"{key}_id", str(value))
-    #                 else:
-    #                     setattr(fresh_model, key, value)
-    #
-    #             await session.commit()
-    #         except Exception as e:
-    #             await session.rollback()
-    #             raise e
-    #         finally:
-    #             await session.close()
-    #
-    #     await super().on_model_change(data, fresh_model, is_created, request)
-
     async def on_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
-        session = await anext(db_helper.session_getter())
-        try:
-            # Get the fresh model from the database
-            if is_created:
-                # Handle the creation of a new TransferRule object
-                fresh_model = TransferRule()
-                session.add(fresh_model)
-            else:
-                # Get the fresh model from the database for updates
-                fresh_model = await session.get(TransferRule, model.id,
-                                                options=[selectinload(TransferRule.required_documents)])
-
-            if not fresh_model:
-                raise ValueError(f"TransferRule with id {model.id} not found")
-
-            for key, value in data.items():
-                if key == 'required_documents':
-                    current_doc_ids = set(str(doc.id) for doc in fresh_model.required_documents)
-                    new_doc_ids = set(self._coerce_document(doc_id) for doc_id in value)
-
-                    # Delete documents, which are not in the new set
-                    for doc_id in current_doc_ids - new_doc_ids:
-                        document = next((doc for doc in fresh_model.required_documents if str(doc.id) == doc_id), None)
-                        if document:
-                            fresh_model.required_documents.remove(document)
-
-                    # Add new documents, check for duplicates
-                    for doc_id in new_doc_ids - current_doc_ids:
-                        if not any(str(doc.id) == doc_id for doc in fresh_model.required_documents):
-                            document = await session.get(Document, doc_id)
-                            if document:
-                                fresh_model.required_documents.append(document)
-
-                elif key in ['send_country', 'receive_country', 'provider', 'transfer_currency']:
-                    setattr(fresh_model, f"{key}_id", str(value))
+        async with db_helper.session_factory() as session:
+            try:
+                # Get the fresh model from the database
+                if is_created:
+                    fresh_model = TransferRule()
+                    session.add(fresh_model)
                 else:
-                    setattr(fresh_model, key, value)
+                    fresh_model = await session.get(TransferRule, model.id,
+                                                    options=[selectinload(TransferRule.required_documents)])
 
-            await session.commit()
-        except Exception as e:
-            await session.rollback()
-            raise e
-        finally:
-            await session.close()
+                if not fresh_model:
+                    raise ValueError(f"TransferRule with id {model.id} not found")
+
+                for key, value in data.items():
+                    if key == 'required_documents':
+                        new_doc_ids = set(self._coerce_document(doc_id) for doc_id in value)
+                        current_doc_ids = set(str(doc.id) for doc in fresh_model.required_documents)
+
+                        # Delete documents, which are not in the new set
+                        docs_to_remove = current_doc_ids - new_doc_ids
+                        for doc_id in docs_to_remove:
+                            doc = next((d for d in fresh_model.required_documents if str(d.id) == doc_id), None)
+                            if doc:
+                                fresh_model.required_documents.remove(doc)
+
+                        # Add new documents, check for duplicates
+                        docs_to_add = new_doc_ids - current_doc_ids
+                        for doc_id in docs_to_add:
+                            doc = await session.get(Document, doc_id)
+                            if doc:
+                                fresh_model.required_documents.append(doc)
+
+                    elif key in ['send_country', 'receive_country', 'provider', 'transfer_currency']:
+                        setattr(fresh_model, f"{key}_id", str(value))
+                    else:
+                        setattr(fresh_model, key, value)
+
+                await session.commit()
+            except Exception as e:
+                await session.rollback()
+                logger.exception(f"Error in on_model_change: {str(e)}")
+                raise e
 
         await super().on_model_change(data, fresh_model, is_created, request)
