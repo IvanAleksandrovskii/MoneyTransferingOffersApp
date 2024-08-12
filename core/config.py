@@ -37,7 +37,7 @@ SQLADMIN_PASSWORD = os.getenv("SQLADMIN_PASSWORD", "password")
 
 
 # Cache ENV variables
-USD_CURRENCY_CACHE_SEC = int(os.getenv("USD_CURRENCY_CACHE_SEC", 3600))
+USD_CURRENCY_CACHE_SEC = int(os.getenv("USD_CURRENCY_CACHE_SEC", 1800))
 OBJECTS_CACHE_SEC = int(os.getenv("OBJECTS_CACHE_SEC", 60))
 
 
@@ -116,8 +116,10 @@ def setup_logging() -> logging.Logger:
     # Hide too many logging information
     # logging.getLogger('httpx').setLevel(logging.WARNING)
     logging.getLogger('httpcore').setLevel(logging.WARNING)
-    # logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
-    logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+    if settings.run.debug:
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
     return new_logger
 
