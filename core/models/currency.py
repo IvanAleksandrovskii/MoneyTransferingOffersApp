@@ -4,12 +4,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.models import Base
 
 
-# TODO: make currency name unique too
 class Currency(Base):
-    # TODO: with my naming logic still need to write down the name if it ends with "ies" in multiple form
     __tablename__ = "currencies"
 
-    # TODO: decide if we should keep more than one language (?)
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)  # Example: US Dollar, Euro, Russian Ruble etc.
     symbol: Mapped[str] = mapped_column(String, nullable=False, unique=True)  # Example: $, £, €, UTF-8
     abbreviation: Mapped[str] = mapped_column(String, nullable=False, unique=True)  # Example: USD, EUR, RUB etc.
