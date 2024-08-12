@@ -1,5 +1,4 @@
-__all__ = ["settings", "logger", "cache"]
+__all__ = ["settings", "logger"]
 
 from .config import settings
 from .config import logger
-from .cache import cache

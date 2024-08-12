@@ -36,6 +36,7 @@ SQLADMIN_PASSWORD = os.getenv("SQLADMIN_PASSWORD")
 # Cache ENV variables
 USD_CURRENCY_CACHE_SEC = int(os.getenv("USD_CURRENCY_CACHE_SEC", 1800))
 OBJECTS_CACHE_SEC = int(os.getenv("OBJECTS_CACHE_SEC", 60))
+OBJECTS_CACHED_MAX_COUNT = int(os.getenv("OBJECTS_CACHED_MAX_COUNT", 20))
 
 
 class RunConfig(BaseModel):
@@ -72,6 +73,7 @@ class SQLAdminConfig(BaseModel):
 class CacheConfig(BaseModel):
     usd_currency_cache_sec: int = USD_CURRENCY_CACHE_SEC
     objects_cache_sec: int = OBJECTS_CACHE_SEC
+    objects_cached_max_count: int = OBJECTS_CACHED_MAX_COUNT
 
 
 class Settings(BaseSettings):
