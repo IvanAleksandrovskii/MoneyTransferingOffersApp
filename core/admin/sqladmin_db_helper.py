@@ -1,22 +1,20 @@
-from sqlalchemy import create_engine, Engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 
 from core import settings
 
 
-class SyncDataBaseHelper:
+class AsyncDataBaseHelper:
     def __init__(self, url: str, echo: bool):
-        self.engine: Engine = create_engine(
+        self.engine: AsyncEngine = create_async_engine(
             url=url,
             echo=echo,
         )
 
-    def dispose(self):
-        self.engine.dispose()
+    async def dispose(self):
+        await self.engine.dispose()
 
 
-sync_db_url = settings.db.url.replace('postgresql+asyncpg://', 'postgresql://')
-
-sync_sqladmin_db_helper = SyncDataBaseHelper(
-    url=sync_db_url,
+async_sqladmin_db_helper = AsyncDataBaseHelper(
+    url=settings.db.url,
     echo=False,
 )
