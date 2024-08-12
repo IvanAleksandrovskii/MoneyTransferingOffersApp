@@ -1,4 +1,3 @@
-version: '3.8'
 services:
 
   pg:
@@ -43,6 +42,7 @@ services:
 
       - USD_CURRENCY_CACHE_SEC=${USD_CURRENCY_CACHE_SEC:-1800}
       - OBJECTS_CACHE_SEC=${OBJECTS_CACHE_SEC:-60}
+      - OBJECTS_CACHED_MAX_COUNT=${OBJECTS_CACHED_MAX_COUNT:-25}
     command: /app/start.sh
 
 networks:
