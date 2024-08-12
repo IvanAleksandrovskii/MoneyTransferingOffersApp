@@ -11,15 +11,15 @@ from pythonjsonlogger import jsonlogger
 load_dotenv(".env")
 
 # App ENV variables
-APP_RUN_HOST = str(os.getenv("APP_RUN_HOST", "0.0.0.0"))
-APP_RUN_PORT = int(os.getenv("APP_RUN_PORT", 8000))
+APP_RUN_HOST = str(os.getenv("APP_RUN_HOST"))
+APP_RUN_PORT = int(os.getenv("APP_RUN_PORT"))
 DEBUG = os.getenv("DEBUG", "False").lower() in ('true', '1')
 
 
 # Database ENV variables
-POSTGRES_DB = os.getenv("POSTGRES_DB", "postgres_db_tg_app")
-POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 
 POSTGRES_POOL_SIZE = int(os.getenv("POSTGRES_POOL_SIZE", 10))
 POSTGRES_MAX_OVERFLOW = int(os.getenv("POSTGRES_MAX_OVERFLOW", 20))
@@ -28,9 +28,9 @@ POSTGRES_ECHO = os.getenv("POSTGRES_ECHO", "False").lower() in ('true', '1')
 
 
 # SQLAdmin ENV variables
-SQLADMIN_SECRET_KEY = os.getenv("SQLADMIN_SECRET_KEY", "secret_key_12345")
-SQLADMIN_USERNAME = os.getenv("SQLADMIN_USERNAME", "admin")
-SQLADMIN_PASSWORD = os.getenv("SQLADMIN_PASSWORD", "password")
+SQLADMIN_SECRET_KEY = os.getenv("SQLADMIN_SECRET_KEY")
+SQLADMIN_USERNAME = os.getenv("SQLADMIN_USERNAME")
+SQLADMIN_PASSWORD = os.getenv("SQLADMIN_PASSWORD")
 
 
 # Cache ENV variables
