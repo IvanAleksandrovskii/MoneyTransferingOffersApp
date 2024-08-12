@@ -22,7 +22,7 @@ from core.admin.models import (
 )
 from core.admin import (
     sqladmin_authentication_backend,
-    sync_sqladmin_db_helper,
+    async_sqladmin_db_helper,
 )
 
 
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown
     logger.info("Shutting down the FastAPI application...")
     await db_helper.dispose()
-    sync_sqladmin_db_helper.dispose()  # Admin db engine dispose
+    await async_sqladmin_db_helper.dispose()  # Admin db engine dispose
 
 # ORJSONResponse to increase performance
 main_app = FastAPI(
@@ -47,7 +47,7 @@ main_app = FastAPI(
 )
 
 # SQLAdmin
-admin = Admin(main_app, engine=db_helper.engine, authentication_backend=sqladmin_authentication_backend)
+admin = Admin(main_app, engine=async_sqladmin_db_helper.engine, authentication_backend=sqladmin_authentication_backend)
 
 admin.add_view(CountryAdmin)
 admin.add_view(CurrencyAdmin)
