@@ -1,8 +1,8 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI
-from fastapi.responses import ORJSONResponse
+from fastapi import FastAPI, Response, Request
+from fastapi.responses import ORJSONResponse, JSONResponse
 import uvicorn
 
 from sqladmin import Admin
@@ -57,6 +57,24 @@ admin.add_view(ProviderExchangeRateAdmin)
 admin.add_view(TransferRuleAdmin)
 
 main_app.include_router(router=api_router, prefix=settings.api_prefix.prefix)
+
+
+@main_app.get('/favicon.ico', include_in_schema=False)
+async def favicon():
+    return Response(status_code=204)
+
+
+@main_app.exception_handler(ValueError)
+async def value_error_handler(request: Request, exc: ValueError):
+    if "badly formed hexadecimal UUID string" in str(exc):
+        return JSONResponse(
+            status_code=404,
+            content={"message": "Resource not found"}
+        )
+    return JSONResponse(
+        status_code=400,
+        content={"message": str(exc)}
+    )
 
 
 if __name__ == "__main__":
