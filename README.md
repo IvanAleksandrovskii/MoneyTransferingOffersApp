@@ -147,7 +147,7 @@ Here's a breakdown of what you can do (swagger is available, check `/docs`):
 - Get details of a specific transfer rule: `GET /api/transfer-rule/{transfer_rule_id}`
 
 #### Exchange Rates
-- Get all exchange rates (debug purpose): `GET /api/all-exchange-rates`
+- Get all exchange rates: `GET /api/all-exchange-rates`
 - Get a specific exchange rate: `GET /api/exchange-rate/{exchange_rate_id}`
 
 For all endpoints that require an ID, you'll need to provide the UUID of the item you're looking for. 
