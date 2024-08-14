@@ -44,22 +44,27 @@ Create a `.env` file or fill in the `docker-compose.yml` file with the following
   - Description: The name of the PostgreSQL database to be used by the application.
   - Example: POSTGRES_DB=transfer_rules_db
   - Explanation: This is the database where all your application data will be stored. Choose a name that's relevant to your project.
+  
 - `POSTGRES_USER=<your_postgres_user>`
   - Description: The username for connecting to the PostgreSQL database.
   - Example: POSTGRES_USER=transfer_admin
   - Explanation: This user should have sufficient privileges to create, read, update, and delete data in the specified database.
+  
 - `POSTGRES_PASSWORD=<your_postgres_password>`
   - Description: The password for the PostgreSQL user.
   - Example: POSTGRES_PASSWORD=secure_password_123
   - Explanation: Choose a strong, unique password. Never use default or easily guessable passwords in a production environment.
+  
 - `POSTGRES_POOL_SIZE=<your_postgres_pool_size>`
   - Description: The maximum number of connections to keep in the database pool.
   - Example: POSTGRES_POOL_SIZE=10
   - Explanation: This helps manage database connections efficiently. A higher number allows more concurrent connections but consumes more resources.
+  
 - `POSTGRES_MAX_OVERFLOW=<your_postgres_max_overflow>`
   - Description: The maximum number of connections that can be created beyond the pool size.
   - Example: POSTGRES_MAX_OVERFLOW=20
   - Explanation: This allows for handling sudden spikes in database connection requests beyond the normal pool size.
+  
 - `POSTGRES_ECHO=<True_or_False>` (Use only if database echo for debug is needed)
   - Description: Whether SQLAlchemy should echo all SQL statements to the console.
   - Example: POSTGRES_ECHO=False
@@ -70,10 +75,12 @@ Create a `.env` file or fill in the `docker-compose.yml` file with the following
   - Description: The host address on which the FastAPI application will run.
   - Example: APP_RUN_HOST=0.0.0.0
   - Explanation: Use 0.0.0.0 to make the app accessible on all network interfaces, or 127.0.0.1 for local-only access.
+  
 - `APP_RUN_PORT=<your_app_run_port>`
   - Description: The port number on which the FastAPI application will listen.
   - Example: APP_RUN_PORT=8000
   - Explanation: Choose an available port. Common choices are 8000, 8080, 5050 or 5000 for development.
+  
 - `DEBUG=<True_or_False>`
   - Description: Enables or disables debug mode for the application.
   - Example: DEBUG=False <- value by default
@@ -84,10 +91,12 @@ Create a `.env` file or fill in the `docker-compose.yml` file with the following
   - Description: Secret key used for securing the SQLAdmin interface.
   - Example: SQLADMIN_SECRET_KEY=your_very_long_and_secure_random_string
   - Explanation: This should be a long, random string. It's crucial for the security of the admin interface.
+  
 - `SQLADMIN_USERNAME=<your_sqladmin_username>`
   - Description: Username for accessing the SQLAdmin interface.
   - Example: SQLADMIN_USERNAME=admin
   - Explanation: Choose a non-obvious username. Avoid common choices like 'admin' in production.
+  
 - `SQLADMIN_PASSWORD=<your_sqladmin_password>`
   - Description: Password for accessing the SQLAdmin interface.
   - Example: SQLADMIN_PASSWORD=very_secure_admin_password
@@ -98,10 +107,16 @@ Create a `.env` file or fill in the `docker-compose.yml` file with the following
   - Description: Duration (in seconds) for caching USD currency data.
   - Example: USD_CURRENCY_CACHE_SEC=1800
   - Explanation: This sets how long USD currency data is cached before being refreshed. 1800 seconds = 30 minutes.
+
 - `OBJECTS_CACHE_SEC=<cache_duration_in_seconds>`
   - Description: Duration (in seconds) for caching other object data (used for main api endpoint's service).
   - Example: OBJECTS_CACHE_SEC=600
-  - Explanation: This sets the cache duration for other frequently accessed objects. 600 seconds = 10 minutes.  - 
+  - Explanation: This sets the cache duration for other frequently accessed objects. 600 seconds = 10 minutes.
+
+- `OBJECTS_CACHED_MAX_COUNT=<your_max_cached_objects_count>`
+  - Description: The maximum number of cached objects.
+  - Example: OBJECTS_CACHED_MAX_COUNT=25
+  - Explanation: This helps to reduce database queries, used to cache currencies. (If load is too high, can implement @alru_cache to endpoints too)
 
 ## API Documentation
 
