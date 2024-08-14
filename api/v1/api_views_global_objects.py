@@ -13,7 +13,18 @@ from core.schemas import CurrencyResponse, CountryResponse, DocumentResponse
 router = APIRouter()
 
 
-# TODO: ADD PAGINATION FOR CURRENCIES AND COUNTRIES???
+@router.get("/currencies", response_model=List[CurrencyResponse], tags=["Global Objects"])
+async def get_all_currencies(session: AsyncSession = Depends(db_helper.session_getter)):
+    query = Currency.active()
+    try:
+        result = await session.execute(query)
+    except SQLAlchemyError as e:
+        logger.exception(f"Unexpected error occurred in get_all_currencies: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    currencies = result.scalars().all()
+    return [CurrencyResponse.model_validate(currency) for currency in currencies]
+
+
 @router.get("/currency/{currency_id}", response_model=CurrencyResponse, tags=["Global Objects"])
 async def get_currency(
         currency_id: UUID,
@@ -32,16 +43,20 @@ async def get_currency(
     return CurrencyResponse.model_validate(currency)
 
 
-@router.get("/currencies", response_model=List[CurrencyResponse], tags=["Global Objects"])
-async def get_all_currencies(session: AsyncSession = Depends(db_helper.session_getter)):
-    query = Currency.active()
+@router.get("/countries", response_model=List[CountryResponse], tags=["Global Objects"])
+async def get_all_countries(session: AsyncSession = Depends(db_helper.session_getter)):
+    query = (
+        Country.active()
+        .options(joinedload(Country.local_currency))
+    )
     try:
         result = await session.execute(query)
+        countries = result.unique().scalars().all()
     except SQLAlchemyError as e:
-        logger.exception(f"Unexpected error occurred in get_all_currencies: {e}")
+        logger.exception(f"Unexpected error occurred in get_all_countries: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
-    currencies = result.scalars().all()
-    return [CurrencyResponse.model_validate(currency) for currency in currencies]
+
+    return [CountryResponse.model_validate(country) for country in countries]
 
 
 @router.get("/country/{country_id}", response_model=CountryResponse, tags=["Global Objects"])
@@ -67,20 +82,17 @@ async def get_country(
     return CountryResponse.model_validate(country)
 
 
-@router.get("/countries", response_model=List[CountryResponse], tags=["Global Objects"])
-async def get_all_countries(session: AsyncSession = Depends(db_helper.session_getter)):
-    query = (
-        Country.active()
-        .options(joinedload(Country.local_currency))
-    )
+@router.get("/documents", response_model=List[DocumentResponse], tags=["Global Objects"])
+async def get_all_documents(session: AsyncSession = Depends(db_helper.session_getter)):
+    query = Document.active()
     try:
         result = await session.execute(query)
-        countries = result.unique().scalars().all()
+        documents = result.scalars().all()
     except SQLAlchemyError as e:
-        logger.exception(f"Unexpected error occurred in get_all_countries: {e}")
+        logger.exception(f"Unexpected error occurred in get_all_documents: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-    return [CountryResponse.model_validate(country) for country in countries]
+    return [DocumentResponse(id=doc.id, name=doc.name) for doc in documents]
 
 
 @router.get("/document/{document_id}", response_model=DocumentResponse, tags=["Global Objects"])
@@ -101,16 +113,3 @@ async def get_document(
         raise HTTPException(status_code=404, detail="Document not found")
 
     return DocumentResponse(id=document.id, name=document.name)
-
-
-@router.get("/documents", response_model=List[DocumentResponse], tags=["Global Objects"])
-async def get_all_documents(session: AsyncSession = Depends(db_helper.session_getter)):
-    query = Document.active()
-    try:
-        result = await session.execute(query)
-        documents = result.scalars().all()
-    except SQLAlchemyError as e:
-        logger.exception(f"Unexpected error occurred in get_all_documents: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
-
-    return [DocumentResponse(id=doc.id, name=doc.name) for doc in documents]
