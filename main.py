@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+import logging
 
-from fastapi import FastAPI, Response, Request, HTTPException
+from fastapi import FastAPI, Response, Request
 from fastapi.responses import ORJSONResponse, JSONResponse
 import uvicorn
 
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await db_helper.dispose()
     await async_sqladmin_db_helper.dispose()  # Admin db engine dispose
 
+
 # ORJSONResponse to increase performance
 main_app = FastAPI(
     lifespan=lifespan,
@@ -65,24 +67,36 @@ async def favicon():
     return Response(status_code=204)
 
 
-# Favicon.ico exceptions silenced
-@main_app.exception_handler(ValueError)
-async def value_error_handler(request: Request, exc: ValueError):
-    if request.url.path == "/favicon.ico" and "badly formed hexadecimal UUID string" in str(exc):
-        return Response(status_code=204)
-    logger.warning(f"ValueError occurred: {str(exc)}")
-    return JSONResponse(
-        status_code=400,
-        content={"message": "Invalid input"}
-    )
+# Global exception handler
+@main_app.middleware("http")
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        if request.url.path == "/favicon.ico":
+            return Response(status_code=204)
+
+        if isinstance(exc, ValueError) and "badly formed hexadecimal UUID string" in str(exc):
+            return Response(status_code=204)
+
+        logger.error(f"Unhandled exception: {str(exc)}")
+        return JSONResponse(
+            status_code=500,
+            content={"message": "Internal server error"}
+        )
 
 
-@main_app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    if request.url.path == "/favicon.ico":
-        return Response(status_code=204)
-    raise exc
+class NoFaviconFilter(logging.Filter):
+    def filter(self, record):
+        return not any(x in record.getMessage() for x in ['favicon.ico', 'apple-touch-icon'])
 
+
+logging.getLogger("uvicorn.access").addFilter(NoFaviconFilter())
 
 if __name__ == "__main__":
-    uvicorn.run("main:main_app", host=settings.run.host, port=settings.run.port, reload=settings.run.debug)
+    uvicorn.run("main:main_app",
+                host=settings.run.host,
+                port=settings.run.port,
+                reload=settings.run.debug,
+                access_log=False,
+                )

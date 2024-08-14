@@ -110,6 +110,13 @@ def setup_logging() -> logging.Logger:
     new_logger.addHandler(stream_handler)
 
     # Hide too many logging information
+    class NoFaviconFilter(logging.Filter):
+        def filter(self, record):
+            return not any(x in record.getMessage() for x in ['favicon.ico', 'apple-touch-icon'])
+
+    logging.getLogger("uvicorn").addFilter(NoFaviconFilter())
+    logging.getLogger("uvicorn.access").addFilter(NoFaviconFilter())
+    logging.getLogger("fastapi").addFilter(NoFaviconFilter())
     # logging.getLogger('httpx').setLevel(logging.WARNING)
     logging.getLogger('httpcore').setLevel(logging.WARNING)
 
