@@ -1,17 +1,17 @@
 from typing import Any
 
 from sqladmin import ModelView
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 from starlette.requests import Request
 from wtforms import SelectMultipleField, validators
 from wtforms.widgets import ListWidget, CheckboxInput
 
 from core import logger
 from core.admin import async_sqladmin_db_helper
-from core.models import TransferRule, Document
+from core.models import TransferRule, Document, TransferProvider, Country, Currency
 
 
 class TransferRuleAdmin(ModelView, model=TransferRule):
@@ -34,6 +34,40 @@ class TransferRuleAdmin(ModelView, model=TransferRule):
         TransferRule.transfer_currency_id,
         TransferRule.min_transfer_amount,
         TransferRule.max_transfer_amount,
+    ]
+
+    column_sortable_list = [
+        TransferRule.fee_percentage,
+        TransferRule.is_active,
+        TransferRule.provider_id,
+        TransferRule.send_country_id,
+        TransferRule.receive_country_id,
+        TransferRule.transfer_currency_id,
+        TransferRule.min_transfer_amount,
+        TransferRule.max_transfer_amount,
+    ]
+    column_filters = [
+        TransferRule.id,
+        TransferRule.fee_percentage,
+        TransferRule.is_active,
+        TransferRule.provider_id,
+        TransferRule.send_country_id,
+        TransferRule.receive_country_id,
+        TransferRule.transfer_currency_id,
+        TransferRule.min_transfer_amount,
+        TransferRule.max_transfer_amount,
+        TransferRule.transfer_method,
+    ]
+
+    column_searchable_list = [
+        'provider.name',
+        'send_country.name',
+        'send_country.abbreviation',
+        'receive_country.name',
+        'receive_country.abbreviation',
+        'transfer_currency.name',
+        'transfer_currency.abbreviation',
+        TransferRule.transfer_method,
     ]
 
     # Custom formatters for displaying data in the list view
@@ -61,7 +95,38 @@ class TransferRuleAdmin(ModelView, model=TransferRule):
         'receive_country': {'validators': [validators.DataRequired()]},
         'provider': {'validators': [validators.DataRequired()]},
         'transfer_currency': {'validators': [validators.DataRequired()]},
+        'fee_percentage': {'validators': [validators.DataRequired(), validators.NumberRange(min=0, max=100)]},
+        'min_transfer_amount': {'validators': [validators.DataRequired(), validators.NumberRange(min=0)]},
+        'max_transfer_amount': {'validators': [validators.DataRequired(), validators.NumberRange(min=0)]},
+        'transfer_method': {'validators': [validators.DataRequired()]},
     }
+
+    def get_query(self):
+        return (
+            super()
+            .get_query()
+            .options(
+                joinedload(TransferRule.provider),
+                joinedload(TransferRule.send_country),
+                joinedload(TransferRule.receive_country),
+                joinedload(TransferRule.transfer_currency),
+                joinedload(TransferRule.required_documents),
+            )
+        )
+
+    def search_query(self, stmt, term):
+        return stmt.filter(
+            or_(
+                TransferRule.provider.has(TransferProvider.name.ilike(f"%{term}%")),
+                TransferRule.send_country.has(Country.name.ilike(f"%{term}%")),
+                TransferRule.send_country.has(Country.abbreviation.ilike(f"%{term}%")),
+                TransferRule.receive_country.has(Country.name.ilike(f"%{term}%")),
+                TransferRule.receive_country.has(Country.abbreviation.ilike(f"%{term}%")),
+                TransferRule.transfer_currency.has(Currency.name.ilike(f"%{term}%")),
+                TransferRule.transfer_currency.has(Currency.abbreviation.ilike(f"%{term}%")),
+                TransferRule.transfer_method.ilike(f"%{term}%"),
+            )
+        )
 
     async def scaffold_form(self):
         """

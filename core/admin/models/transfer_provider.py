@@ -1,5 +1,6 @@
 from typing import Any
 
+from sqlalchemy import or_
 from starlette.requests import Request
 from wtforms import validators
 
@@ -10,10 +11,11 @@ from core.models import TransferProvider
 
 class TransferProviderAdmin(BaseAdminModel, model=TransferProvider):
     column_list = [TransferProvider.name, TransferProvider.url] + BaseAdminModel.column_list
-    column_searchable_list = [TransferProvider.name]
-    column_sortable_list = BaseAdminModel.column_sortable_list + [TransferProvider.name]
-    column_filters = BaseAdminModel.column_filters + [TransferProvider.name]
-    # form_excluded_columns = ['exchange_rates', 'transfer_rules']
+
+    column_searchable_list = [TransferProvider.name, TransferProvider.url, TransferProvider.id]
+    column_sortable_list = BaseAdminModel.column_sortable_list + [TransferProvider.name, TransferProvider.url]
+    column_filters = BaseAdminModel.column_filters + [TransferProvider.name, TransferProvider.url, TransferProvider.id]
+
     form_columns = ['name', 'url', 'is_active']
     form_args = {
         'name': {
@@ -32,6 +34,14 @@ class TransferProviderAdmin(BaseAdminModel, model=TransferProvider):
         },
     }
     category = "Providers"
+
+    def search_query(self, stmt, term):
+        return stmt.filter(
+            or_(
+                TransferProvider.name.ilike(f"%{term}%"),
+                TransferProvider.url.ilike(f"%{term}%")
+            )
+        )
 
     async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
         if is_created:

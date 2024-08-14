@@ -1,5 +1,6 @@
 from typing import Any
 
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -13,10 +14,11 @@ from core.models import Currency
 
 class CurrencyAdmin(BaseAdminModel, model=Currency):
     column_list = [Currency.abbreviation, Currency.name, Currency.symbol] + BaseAdminModel.column_list
-    column_searchable_list = [Currency.name, Currency.abbreviation]
-    column_sortable_list = BaseAdminModel.column_sortable_list + [Currency.name, Currency.abbreviation]
-    column_filters = BaseAdminModel.column_filters + [Currency.name, Currency.abbreviation]
-    # form_excluded_columns = ['countries']
+
+    column_searchable_list = [Currency.name, Currency.abbreviation, Currency.symbol, Currency.id]
+    column_sortable_list = BaseAdminModel.column_sortable_list + [Currency.name, Currency.abbreviation, Currency.symbol]
+    column_filters = BaseAdminModel.column_filters + [Currency.name, Currency.abbreviation, Currency.symbol, Currency.id]
+
     form_columns = ['name', 'abbreviation', 'symbol', 'is_active']
     form_args = {
         'abbreviation': {
@@ -44,6 +46,15 @@ class CurrencyAdmin(BaseAdminModel, model=Currency):
     name_plural = "Currencies"
     category = "Global"
     can_delete = False
+
+    def search_query(self, stmt, term):
+        return stmt.filter(
+            or_(
+                Currency.name.ilike(f"%{term}%"),
+                Currency.abbreviation.ilike(f"%{term}%"),
+                Currency.symbol.ilike(f"%{term}%")
+            )
+        )
 
     async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
         try:
