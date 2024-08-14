@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI, Response, Request
+from fastapi import FastAPI, Response, Request, HTTPException
 from fastapi.responses import ORJSONResponse, JSONResponse
 import uvicorn
 
@@ -59,22 +59,29 @@ admin.add_view(TransferRuleAdmin)
 main_app.include_router(router=api_router, prefix=settings.api_prefix.prefix)
 
 
+# Favicon.ico errors silenced
 @main_app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
     return Response(status_code=204)
 
 
+# Favicon.ico exceptions silenced
 @main_app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
-    if "badly formed hexadecimal UUID string" in str(exc):
-        return JSONResponse(
-            status_code=404,
-            content={"message": "Resource not found"}
-        )
+    if request.url.path == "/favicon.ico" and "badly formed hexadecimal UUID string" in str(exc):
+        return Response(status_code=204)
+    logger.warning(f"ValueError occurred: {str(exc)}")
     return JSONResponse(
         status_code=400,
-        content={"message": str(exc)}
+        content={"message": "Invalid input"}
     )
+
+
+@main_app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if request.url.path == "/favicon.ico":
+        return Response(status_code=204)
+    raise exc
 
 
 if __name__ == "__main__":
