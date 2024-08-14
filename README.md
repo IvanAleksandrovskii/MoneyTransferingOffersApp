@@ -140,16 +140,16 @@ Here's a breakdown of what you can do (swagger is available, check `/docs`):
 ### Working with Currencies, Countries, and Documents
 
 #### Currencies
-- Get details of a specific currency: `GET /api/currency/{currency_id}`
 - Get a list of all available currencies: `GET /api/currencies`
+- Get details of a specific currency: `GET /api/currency/{currency_id}`
 
 #### Countries
-- Get details of a specific country: `GET /api/country/{country_id}`
 - Get a list of all countries: `GET /api/countries`
+- Get details of a specific country: `GET /api/country/{country_id}`
 
 #### Documents
-- Get details of a specific document: `GET /api/document/{document_id}`
 - Get a list of all documents: `GET /api/documents`
+- Get details of a specific document: `GET /api/document/{document_id}`
 
 ### Provider and Transfer Rule Information
 
