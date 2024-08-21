@@ -15,9 +15,14 @@ from core.schemas import (
 )
 from core.services import CurrencyConversionService
 from core.services import get_object_by_id
-
+from utils import Ordering
 
 router = APIRouter()
+
+transfer_rule_ordering = Ordering(TransferRule, [
+    "id", "fee_percentage", "min_transfer_amount", "max_transfer_amount",
+    "transfer_method", "min_transfer_time", "max_transfer_time"
+])
 
 
 @router.get("/transfer-rules-filtered", response_model=OptimizedTransferRuleResponse)
@@ -26,6 +31,8 @@ async def get_transfer_rules(
     receive_country_id: UUID = Query(..., description="ID of the receiving country"),
     optional_from_currency_id: Optional[UUID] = Query(None, description="ID of the sending currency"),
     optional_amount: Optional[float] = Query(None, description="Amount to transfer", gt=0),
+    order: Optional[str] = Query(None, description="Field to order by"),
+    order_desc: bool = Query(False, description="Order descending"),
     session: AsyncSession = Depends(db_helper.session_getter)
 ):
     """
@@ -54,6 +61,7 @@ async def get_transfer_rules(
             joinedload(TransferRule.transfer_currency.and_(Currency.is_active == True)),
             joinedload(TransferRule.required_documents.and_(Document.is_active == True))
         )
+        .order_by(transfer_rule_ordering.order_by(order, order_desc))
     )
     try:
         result = await session.execute(query)
