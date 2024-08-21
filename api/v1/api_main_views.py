@@ -20,9 +20,10 @@ from utils import Ordering
 router = APIRouter()
 
 transfer_rule_ordering = Ordering(TransferRule, [
-    "id", "fee_percentage", "min_transfer_amount", "max_transfer_amount",
+    "id", "fee_percentage", "transfer_fee_percentage", "min_transfer_amount", "max_transfer_amount",
     "transfer_method", "min_transfer_time", "max_transfer_time"
 ])
+# "fee_percentage", "transfer_fee_percentage" ARE WORKING BOTH but refers to the same field
 
 
 @router.get("/transfer-rules-filtered", response_model=OptimizedTransferRuleResponse)
