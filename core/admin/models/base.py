@@ -9,6 +9,11 @@ from core import logger
 from core.admin import async_sqladmin_db_helper
 
 
+# TODO: fix exceptions handling for creation and update objects about unique constraints and ondelete exceptions
+#  for currency if it's not allowed to delete a currency dew to county (local currency) relation.
+#  (Only place no cascade delete for currency is countries relation, all other relations got cascade logic)
+
+# TODO: Maybe need to work on the model Base or to solve it with some admin logic fixes
 class BaseAdminModel(ModelView):
     column_list = ['is_active', 'id']
     column_sortable_list = ['is_active']
