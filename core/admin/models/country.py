@@ -40,7 +40,6 @@ class CountryAdmin(BaseAdminModel, model=Country):
     name = "Country"
     name_plural = "Countries"
     category = "Global"
-    can_delete = False
 
     def get_query(self):
         return super().get_query().options(joinedload(Country.local_currency))

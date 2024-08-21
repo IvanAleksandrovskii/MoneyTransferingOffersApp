@@ -29,7 +29,6 @@ class DocumentAdmin(BaseAdminModel, model=Document):
 
     name = "Document"
     name_plural = "Documents"
-    can_delete = False
     category = "Global"
 
     def search_query(self, stmt, term):

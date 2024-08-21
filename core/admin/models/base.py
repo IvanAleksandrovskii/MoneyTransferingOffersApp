@@ -16,6 +16,7 @@ class BaseAdminModel(ModelView):
     page_size = 50
     can_create = True
     can_edit = True
+    can_delete = True
     can_view_details = True
 
     async def get_form(self, form_class, obj: Any = None):

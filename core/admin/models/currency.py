@@ -2,8 +2,6 @@ from typing import Any
 
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
-from starlette import status
-from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from wtforms import validators
 
@@ -45,7 +43,6 @@ class CurrencyAdmin(BaseAdminModel, model=Currency):
     name = "Currency"
     name_plural = "Currencies"
     category = "Global"
-    can_delete = False
 
     def search_query(self, stmt, term):
         return stmt.filter(
@@ -56,7 +53,17 @@ class CurrencyAdmin(BaseAdminModel, model=Currency):
             )
         )
 
-    async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
+    async def delete_model(self, request: Request, model: Currency):
+        try:
+            return await super().delete_model(request, model)
+        except IntegrityError as e:
+            logger.warning(f"Attempt to delete currency with linked countries: {e}")
+            return False
+        except Exception as e:
+            logger.exception(f"Unexpected error occurred while deleting currency: {e}")
+            return False
+
+    async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request):
         try:
             if is_created:
                 logger.info(f"Created currency: {model.name} ({model.abbreviation})")
@@ -64,17 +71,8 @@ class CurrencyAdmin(BaseAdminModel, model=Currency):
                 logger.info(f"Updated currency: {model.name} ({model.abbreviation})")
         except IntegrityError as e:
             await request.app.state.db.rollback()
-
-            # Unique constraint error
-            if "uq_currency_name" in str(e) or "uq_currency_abbreviation" in str(e) or "uq_currency_symbol" in str(e):
-                logger.warning(f"Attempt to create duplicate currency: {e}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Currency with this name, abbreviation or symbol already exists"
-                )
-            else:
-                logger.exception(f"Unexpected IntegrityError occurred: {e}")
-                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.warning(f"Integrity error when creating/updating currency: {e}")
+            raise ValueError("A currency with this name, abbreviation or symbol already exists.")
         except Exception as e:
             logger.exception(f"Unexpected error occurred in after_model_change: {e}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raise ValueError("An unexpected error occurred while processing your request.")
