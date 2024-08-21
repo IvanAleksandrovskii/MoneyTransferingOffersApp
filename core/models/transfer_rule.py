@@ -20,21 +20,20 @@ transfer_rule_documents = Table(
     'transfer_rule_documents',
     Base.metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('transfer_rule_id', UUID(as_uuid=True), ForeignKey('transfer_rules.id'), nullable=False),
-    Column('document_id', UUID(as_uuid=True), ForeignKey('documents.id'), nullable=False)
+    Column('transfer_rule_id', UUID(as_uuid=True), ForeignKey('transfer_rules.id', ondelete="CASCADE"), nullable=False),
+    Column('document_id', UUID(as_uuid=True), ForeignKey('documents.id', ondelete="CASCADE"), nullable=False)
 )
 
 
 class TransferRule(Base):
     # Foreign key relationships
-    send_country_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("countries.id"), nullable=False)
+    send_country_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("countries.id", ondelete="CASCADE"), nullable=False)
     send_country: Mapped[Country] = relationship("Country", foreign_keys=[send_country_id], lazy="joined")
 
-    receive_country_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("countries.id"), nullable=False)
+    receive_country_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("countries.id", ondelete="CASCADE"), nullable=False)
     receive_country: Mapped[Country] = relationship("Country", foreign_keys=[receive_country_id], lazy="joined")
 
-    provider_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transfer_providers.id", ondelete="CASCADE"),
-                                                   nullable=False)
+    provider_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transfer_providers.id", ondelete="CASCADE"), nullable=False)
     provider: Mapped[TransferProvider] = relationship("TransferProvider", foreign_keys=[provider_id],
                                                       back_populates="transfer_rules", lazy="joined")
 
@@ -44,7 +43,7 @@ class TransferRule(Base):
     max_transfer_amount: Mapped[Optional[float]] = mapped_column(Float, nullable=False)
 
     # Transfer currency information
-    transfer_currency_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("currencies.id"), nullable=False)
+    transfer_currency_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("currencies.id", ondelete="CASCADE"), nullable=False)
     transfer_currency: Mapped[Optional[Currency]] = relationship("Currency", foreign_keys=[transfer_currency_id],
                                                                  lazy="joined")
 

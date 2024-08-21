@@ -11,7 +11,14 @@ class Currency(Base):
     symbol: Mapped[str] = mapped_column(String, nullable=False, unique=True)  # Example: $, £, €, UTF-8
     abbreviation: Mapped[str] = mapped_column(String, nullable=False, unique=True)  # Example: USD, EUR, RUB etc.
 
-    countries = relationship("Country", back_populates="local_currency", lazy="noload")
+    countries = relationship("Country", back_populates="local_currency",
+                             lazy="noload", cascade="all, delete-orphan")
+
+    transfer_rules = relationship("TransferRule", back_populates="transfer_currency", cascade="all, delete-orphan")
+    from_exchange_rates = relationship("ProviderExchangeRate", foreign_keys="ProviderExchangeRate.from_currency_id",
+                                       back_populates="from_currency", cascade="all, delete-orphan")
+    to_exchange_rates = relationship("ProviderExchangeRate", foreign_keys="ProviderExchangeRate.to_currency_id",
+                                     back_populates="to_currency", cascade="all, delete-orphan")
 
     __table_args__ = (
         UniqueConstraint('abbreviation', name='uq_currency_abbreviation'),

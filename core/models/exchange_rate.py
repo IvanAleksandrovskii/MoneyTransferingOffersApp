@@ -12,10 +12,10 @@ class ProviderExchangeRate(Base):
                                                    nullable=False)
     provider: Mapped[TransferProvider] = relationship("TransferProvider", back_populates="exchange_rates",
                                                       lazy='joined')
-    from_currency_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("currencies.id"), nullable=False)
+    from_currency_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("currencies.id", ondelete="CASCADE"), nullable=False)
     from_currency: Mapped[Currency] = relationship("Currency", foreign_keys=[from_currency_id], lazy="joined")
 
-    to_currency_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("currencies.id"), nullable=False)
+    to_currency_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("currencies.id", ondelete="CASCADE"), nullable=False)
     to_currency: Mapped[Currency] = relationship("Currency", foreign_keys=[to_currency_id], lazy="joined")
 
     rate: Mapped[float] = mapped_column(Float, nullable=False)

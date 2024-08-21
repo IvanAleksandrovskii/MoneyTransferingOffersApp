@@ -11,8 +11,15 @@ class Country(Base):
 
     name: Mapped[str] = mapped_column(String, nullable=False)
     abbreviation: Mapped[str] = mapped_column(String, nullable=False, unique=True)
-    local_currency_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("currencies.id"), nullable=False)
+    local_currency_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("currencies.id", ondelete="RESTRICT"),
+                                                         nullable=False)
     local_currency = relationship("Currency", back_populates="countries")
+
+    # These relationships are for delete logic
+    send_transfer_rules = relationship("TransferRule", foreign_keys="TransferRule.send_country_id",
+                                       back_populates="send_country", cascade="all, delete-orphan")
+    receive_transfer_rules = relationship("TransferRule", foreign_keys="TransferRule.receive_country_id",
+                                          back_populates="receive_country", cascade="all, delete-orphan")
 
     def __str__(self):
         return f"{self.name} ({self.abbreviation})"
