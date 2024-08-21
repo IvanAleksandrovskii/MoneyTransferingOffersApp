@@ -22,7 +22,7 @@ router = APIRouter()
 transfer_rule_ordering = Ordering(TransferRule, [
     "id", "fee_percentage", "min_transfer_amount", "max_transfer_amount",
     "transfer_method", "min_transfer_time", "max_transfer_time"
-])
+], default_field="fee_percentage")  # default_field to "fee_percentage"
 
 
 @router.get("/transfer-rules-filtered", response_model=OptimizedTransferRuleResponse)
