@@ -4,6 +4,8 @@ from sqladmin import ModelView, action
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from fastapi import HTTPException
 
 from core import logger
 from core.admin import async_sqladmin_db_helper
@@ -63,3 +65,54 @@ class BaseAdminModel(ModelView):
     async def deactivate(self, request: Request) -> RedirectResponse:
         await self._process_action(request, False)
         return RedirectResponse(request.url_for("admin:list", identity=self.identity), status_code=302)
+
+    # TODO: Make error logging shorter?
+    async def insert_model(self, request: Request, data: dict) -> Any:
+        try:
+            return await super().insert_model(request, data)
+        except IntegrityError as e:
+            error_msg = str(e).split('\n')[0]
+            constraint = error_msg.split('"')[-2] if '"' in error_msg else "unknown"
+            field = constraint.split('_')[-1] if '_' in constraint else constraint
+            logger.error(f"IntegrityError in insert_model: {field} must be unique")
+            raise HTTPException(status_code=400, detail=f"A record with this {field} already exists.")
+        except SQLAlchemyError as e:
+            logger.error(f"SQLAlchemyError in insert_model: {str(e).split('\n')[0]}")
+            raise HTTPException(status_code=500, detail="An error occurred while creating the record.")
+        except Exception as e:
+            logger.error(f"Unexpected error in insert_model: {str(e).split('\n')[0]}")
+            raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+
+    async def update_model(self, request: Request, pk: Any, data: dict) -> Any:
+        try:
+            return await super().update_model(request, pk, data)
+        except IntegrityError as e:
+            error_msg = str(e).split('\n')[0]
+            constraint = error_msg.split('"')[-2] if '"' in error_msg else "unknown"
+            field = constraint.split('_')[-1] if '_' in constraint else constraint
+            logger.error(f"IntegrityError in update_model: {field} must be unique")
+            raise HTTPException(status_code=400, detail=f"A record with this {field} already exists.")
+        except SQLAlchemyError as e:
+            logger.error(f"SQLAlchemyError in update_model: {str(e).split('\n')[0]}")
+            raise HTTPException(status_code=500, detail="An error occurred while updating the record.")
+        except Exception as e:
+            logger.error(f"Unexpected error in update_model: {str(e).split('\n')[0]}")
+            raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+
+    async def delete_model(self, request: Request, pk: Any) -> bool:
+        try:
+            result = await super().delete_model(request, pk)
+            if result is None:
+                logger.warning(f"Delete operation for pk {pk} returned None")
+                return False
+            return True
+        except IntegrityError as e:
+            error_message = str(e).split('\n')[0]
+            logger.error(f"IntegrityError in delete_model: {error_message}")
+            raise HTTPException(status_code=400, detail=error_message)
+        except SQLAlchemyError as e:
+            logger.error(f"SQLAlchemyError in delete_model: {str(e)}")
+            raise HTTPException(status_code=500, detail="An error occurred while deleting the record.")
+        except Exception as e:
+            logger.error(f"Unexpected error in delete_model: {str(e)}")
+            raise HTTPException(status_code=500, detail="An unexpected error occurred.")

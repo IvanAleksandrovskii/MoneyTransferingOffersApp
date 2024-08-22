@@ -1,9 +1,9 @@
 from typing import Any
-
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 from wtforms import validators
+from fastapi import HTTPException
 
 from core import logger
 from core.admin.models.base import BaseAdminModel
@@ -53,15 +53,17 @@ class CurrencyAdmin(BaseAdminModel, model=Currency):
             )
         )
 
-    async def delete_model(self, request: Request, model: Currency):
+    async def delete_model(self, request: Request, pk: Any) -> bool:
         try:
-            return await super().delete_model(request, model)
-        except IntegrityError as e:
-            logger.warning(f"Attempt to delete currency with linked countries: {e}")
-            return False
-        except Exception as e:
-            logger.exception(f"Unexpected error occurred while deleting currency: {e}")
-            return False
+            return await super().delete_model(request, pk)
+        except HTTPException as e:
+            if e.status_code == 400 and "cannot be deleted" in str(e.detail).lower():
+                logger.error("Cannot delete currency: it is set as the local currency for one or more countries")
+                raise HTTPException(
+                    status_code=400,
+                    detail="This currency cannot be deleted because it is set as the local currency for one or more countries."
+                )
+            raise
 
     async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request):
         try:
@@ -72,7 +74,7 @@ class CurrencyAdmin(BaseAdminModel, model=Currency):
         except IntegrityError as e:
             await request.app.state.db.rollback()
             logger.warning(f"Integrity error when creating/updating currency: {e}")
-            raise ValueError("A currency with this name, abbreviation or symbol already exists.")
+            raise HTTPException(status_code=400, detail="A currency with this name, abbreviation or symbol already exists.")
         except Exception as e:
             logger.exception(f"Unexpected error occurred in after_model_change: {e}")
-            raise ValueError("An unexpected error occurred while processing your request.")
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while processing your request.")
