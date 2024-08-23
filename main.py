@@ -4,6 +4,8 @@ import logging
 
 from fastapi import FastAPI, Response, Request
 from fastapi.responses import ORJSONResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+
 import uvicorn
 
 from sqladmin import Admin
@@ -60,6 +62,8 @@ admin.add_view(TransferRuleAdmin)
 
 main_app.include_router(router=api_router, prefix=settings.api_prefix.prefix)
 
+main_app.mount("/media", StaticFiles(directory=settings.media.root), name="media")
+
 
 # Favicon.ico errors silenced
 @main_app.get('/favicon.ico', include_in_schema=False)
@@ -72,14 +76,14 @@ async def favicon():
 async def catch_exceptions_middleware(request: Request, call_next):
     try:
         return await call_next(request)
-    except Exception as exc:
+    except Exception as e:
         if request.url.path == "/favicon.ico":
             return Response(status_code=204)
 
-        if isinstance(exc, ValueError) and "badly formed hexadecimal UUID string" in str(exc):
+        if isinstance(e, ValueError) and "badly formed hexadecimal UUID string" in str(e):
             return Response(status_code=204)
 
-        logger.error(f"Unhandled exception: {str(exc)}")
+        logger.exception(f"Unhandled exception: {str(e)}")
         return JSONResponse(
             status_code=500,
             content={"message": "Internal server error"}

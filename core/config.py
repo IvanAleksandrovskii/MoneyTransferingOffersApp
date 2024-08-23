@@ -76,15 +76,24 @@ class CacheConfig(BaseModel):
     objects_cached_max_count: int = OBJECTS_CACHED_MAX_COUNT
 
 
+class MediaConfig(BaseModel):
+    root: str = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'media')
+    url: str = '/media/'
+
+
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     api_prefix: APIPrefixConfig = APIPrefixConfig()
     db: DBConfig = DBConfig()
     admin_panel: SQLAdminConfig = SQLAdminConfig()
     cache: CacheConfig = CacheConfig()
+    media: MediaConfig = MediaConfig()
 
 
 settings = Settings()
+
+# Make sure media root exists
+os.makedirs(settings.media.root, exist_ok=True)
 
 
 # Setup logging
