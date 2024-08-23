@@ -72,14 +72,12 @@ class TransferProviderAdmin(BaseAdminModel, model=TransferProvider):
             except Exception as e:
                 logger.error(f"Error uploading logo for provider {model.name}: {str(e)}")
 
-    # TODO: Deleting not working, need to WRITE a storage delete function (!)
-    # async def delete_model(self, request: Request, pk: Any):
-    #     model = await self.get_object(pk)
-    #     if model and model.logo:
-    #         try:
-    #             await storage.delete(model.logo.name)
-    #             logger.info(f"Logo deleted for provider: {model.name}")
-    #         except Exception as e:
-    #             logger.error(f"Error deleting logo for provider {model.name}: {str(e)}")
-    #     return await super().delete_model(request, pk)
-
+    async def delete_model(self, request: Request, pk: Any):
+        model = await self.get_object(pk)
+        if model and model.logo:
+            try:
+                storage.delete(model.logo)
+                logger.info(f"Logo deleted for provider: {model.name}")
+            except Exception as e:
+                logger.error(f"Error deleting logo for provider {model.name}: {str(e)}")
+        return await super().delete_model(request, pk)
