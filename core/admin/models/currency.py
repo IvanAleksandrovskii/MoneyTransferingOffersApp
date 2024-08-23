@@ -20,7 +20,7 @@ class CurrencyAdmin(BaseAdminModel, model=Currency):
     form_columns = ['name', 'abbreviation', 'symbol', 'is_active']
     form_args = {
         'abbreviation': {
-            'validators': [validators.DataRequired(), validators.Length(min=1, max=3)]
+            'validators': [validators.DataRequired(), validators.Length(min=3, max=3)]
         },
         'symbol': {
             'validators': [validators.DataRequired(), validators.Length(min=1, max=5)]

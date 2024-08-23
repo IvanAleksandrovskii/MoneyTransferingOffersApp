@@ -26,7 +26,7 @@ class CountryAdmin(BaseAdminModel, model=Country):
             'validators': [validators.DataRequired(), validators.Length(min=1, max=100)]
         },
         'abbreviation': {
-            'validators': [validators.DataRequired(), validators.Length(min=2, max=3)]
+            'validators': [validators.DataRequired(), validators.Length(min=3, max=3)]
         }
     }
     form_widget_args = {

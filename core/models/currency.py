@@ -9,7 +9,7 @@ class Currency(Base):
 
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)  # Example: US Dollar, Euro, Russian Ruble etc.
     symbol: Mapped[str] = mapped_column(String, nullable=False, unique=True)  # Example: $, £, €, UTF-8
-    abbreviation: Mapped[str] = mapped_column(String, nullable=False, unique=True)  # Example: USD, EUR, RUB etc.
+    abbreviation: Mapped[str] = mapped_column(String(3), nullable=False, unique=True)  # Example: USD, EUR, RUB etc.
 
     countries = relationship("Country", back_populates="local_currency",
                              lazy="noload", cascade="all, delete-orphan")
