@@ -1,4 +1,4 @@
-from sqlalchemy import String, UniqueConstraint
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models import Base
@@ -19,10 +19,6 @@ class Currency(Base):
                                        back_populates="from_currency", cascade="all, delete-orphan")
     to_exchange_rates = relationship("ProviderExchangeRate", foreign_keys="ProviderExchangeRate.to_currency_id",
                                      back_populates="to_currency", cascade="all, delete-orphan")
-
-    __table_args__ = (
-        UniqueConstraint('abbreviation', name='uq_currency_abbreviation'),
-    )
 
     def __str__(self):
         return f"{self.abbreviation} ({self.name} - {self.symbol})"
