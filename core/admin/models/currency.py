@@ -58,20 +58,23 @@ class CurrencyAdmin(BaseAdminModel, model=Currency):
         try:
             result = await super().delete_model(request, pk)
             if result is None:
-                logger.warning(f"Delete operation for currency with pk {pk} returned None")
                 return RedirectResponse(request.url_for("admin:list", identity=self.identity), status_code=302)
-            return result
+            return result  # TODO: figure out how should it be, seems like result is None in both cases with
+            #                  success/not success cases, so redirection might be the good decision and this code line
+            #                  never gonna be used actually and it's just a redirect response anyway
         except IntegrityError as e:
             error_message = str(e)
             logger.error(f"IntegrityError in delete_model for currency: {error_message}")
             if "foreign key constraint" in error_message.lower():
-                error = "This currency cannot be deleted because it is associated with one or more countries. Please remove the currency from all countries before deleting it."
+                error = ("This currency cannot be deleted because it is associated with one or more countries. "
+                         "Please remove the currency from all countries before deleting it.")
             else:
                 error = "An error occurred while deleting the currency. It may be referenced by other records."
         except Exception as e:
             logger.error(f"Unexpected error in delete_model for currency: {str(e)}")
             error = "An unexpected error occurred while deleting the currency."
-
+        # TODO: Code under seems to be useless. It's working with scenarios when delete turns back the response
+        #  but the response seems to be None all the time (I expected it to be true or false as it was in an older version)
         # Create URL and add error param
         url = request.url_for("admin:list", identity=self.identity)
         url = url.include_query_params(error=error)
