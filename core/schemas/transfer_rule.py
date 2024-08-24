@@ -14,11 +14,16 @@ from .time_delta_info import TimeDeltaInfo
 
 class TransferRuleDetails(BaseModel):
     id: UUID
+
     provider: ProviderResponse
+
     transfer_method: str
+
     min_transfer_time: TimeDeltaInfo
     max_transfer_time: TimeDeltaInfo
+
     required_documents: List[DocumentResponse]
+
     original_amount: Optional[float] = Field(None, ge=0)
     converted_amount: Optional[float] = Field(None, ge=0)
     transfer_currency: CurrencyResponse
@@ -52,16 +57,20 @@ class TransferRuleDetails(BaseModel):
 
 
 class DetailedTransferRuleResponse(BaseResponse):
-    provider_name: str
-    provider_id: UUID
-    provider_url: str | None
+
+    provider: ProviderResponse  # UPD in schema
+
     send_country: CountryResponse
+
     receive_country: CountryResponse
+
     transfer_currency: CurrencyResponse
+
     min_transfer_amount: float = Field(..., gt=0)
     max_transfer_amount: float = Field(..., gt=0)
     fee_percentage: float = Field(..., ge=0, le=100)
     transfer_method: str
+
     min_transfer_time: TimeDeltaInfo
     max_transfer_time: TimeDeltaInfo
     required_documents: List[DocumentResponse]
@@ -70,9 +79,7 @@ class DetailedTransferRuleResponse(BaseResponse):
     def model_validate(cls, obj, **kwargs):
         return cls(
             id=obj.id,
-            provider_name=obj.provider.name,
-            provider_id=obj.provider.id,
-            provider_url=obj.provider.url,
+            provider=ProviderResponse.model_validate(obj.provider),
             send_country=CountryResponse.model_validate(obj.send_country),
             receive_country=CountryResponse.model_validate(obj.receive_country),
             transfer_currency=CurrencyResponse.model_validate(obj.transfer_currency),
