@@ -7,7 +7,7 @@ from .transfer_rule import transfer_rule_documents
 class Document(Base):
     __tablename__ = "documents"
 
-    name: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     transfer_rules = relationship("TransferRule", secondary=transfer_rule_documents,
                                   back_populates="required_documents", lazy="noload")
 
