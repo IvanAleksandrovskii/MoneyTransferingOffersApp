@@ -25,7 +25,7 @@ services:
     depends_on:
       - pg
     environment:
-      - DEBUG=${DEBUG:-True}
+      - DEBUG=${DEBUG:-False}
       - APP_RUN_HOST=${APP_RUN_HOST:-0.0.0.0}
       - APP_RUN_PORT=${APP_RUN_PORT:-8000}
 
