@@ -1,4 +1,5 @@
 import os
+import re
 
 from pydantic_settings import BaseSettings
 from pydantic import BaseModel, PostgresDsn
@@ -103,7 +104,7 @@ def setup_logging() -> logging.Logger:
 
     :return: Configured logger
     """
-    log_level = logging.DEBUG if settings.run.debug else logging.INFO
+    log_level = logging.DEBUG if settings.run.debug else logging.ERROR
 
     # Stream handler for console output
     stream_handler = logging.StreamHandler()
@@ -126,12 +127,12 @@ def setup_logging() -> logging.Logger:
     logging.getLogger("uvicorn").addFilter(NoFaviconFilter())
     logging.getLogger("uvicorn.access").addFilter(NoFaviconFilter())
     logging.getLogger("fastapi").addFilter(NoFaviconFilter())
-    # logging.getLogger('httpx').setLevel(logging.WARNING)
-    logging.getLogger('httpcore').setLevel(logging.WARNING)
 
-    logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+    logging.getLogger('httpcore').setLevel(logging.ERROR)
+
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
     if settings.run.debug:
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
 
     return new_logger
 
@@ -142,8 +143,10 @@ logger = setup_logging()
 # Debug WARNING
 if settings.run.debug:
     logger.warning("DEBUG mode is on!")
+    # Regex for login and password searching in URL
+    masked_url = re.sub(r'(://[^:]+:)[^@]+(@)', r'\1******\2', settings.db.url)
     # DB URL
-    logger.info("Database URL: %s", settings.db.url)
+    logger.info("Database URL: %s", masked_url)
 
 # Database ECHO WARNING
 if settings.db.echo:
