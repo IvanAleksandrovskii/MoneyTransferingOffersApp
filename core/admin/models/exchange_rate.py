@@ -1,7 +1,6 @@
 from typing import Any
 
 from sqlalchemy import or_
-from sqlalchemy.orm import joinedload
 from starlette.requests import Request
 from wtforms import validators
 
@@ -72,13 +71,6 @@ class ProviderExchangeRateAdmin(BaseAdminModel, model=ProviderExchangeRate):
     name = "Provider Exchange Rate"
     category = "Providers"
 
-    def get_query(self):
-        return super().get_query().options(
-            joinedload(ProviderExchangeRate.provider),
-            joinedload(ProviderExchangeRate.from_currency),
-            joinedload(ProviderExchangeRate.to_currency)
-        )
-
     def search_query(self, stmt, term):
         return stmt.filter(
             or_(
@@ -91,7 +83,8 @@ class ProviderExchangeRateAdmin(BaseAdminModel, model=ProviderExchangeRate):
         )
 
     async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
-        if is_created:
-            logger.info("Created exchange rate successfully")
-        else:
-            logger.info("Updated exchange rate successfully")
+        try:
+            action = "Created" if is_created else "Updated"
+            logger.info(f"{action} exchange rate successfully")
+        except Exception as e:
+            logger.error(f"Error in after_model_change for exchange rate: {e}")

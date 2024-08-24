@@ -4,7 +4,7 @@ from sqladmin import ModelView
 from sqlalchemy import select, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import selectinload
 from starlette.requests import Request
 from wtforms import SelectMultipleField, validators
 from wtforms.widgets import ListWidget, CheckboxInput
@@ -101,19 +101,6 @@ class TransferRuleAdmin(ModelView, model=TransferRule):
         'transfer_method': {'validators': [validators.DataRequired()]},
     }
 
-    def get_query(self):
-        return (
-            super()
-            .get_query()
-            .options(
-                joinedload(TransferRule.provider),
-                joinedload(TransferRule.send_country),
-                joinedload(TransferRule.receive_country),
-                joinedload(TransferRule.transfer_currency),
-                joinedload(TransferRule.required_documents),
-            )
-        )
-
     def search_query(self, stmt, term):
         return stmt.filter(
             or_(
@@ -175,15 +162,6 @@ class TransferRuleAdmin(ModelView, model=TransferRule):
                 return result.scalar_one_or_none()
             finally:
                 await session.close()
-
-    async def edit_form(self, obj):
-        """
-        Populate the edit form with existing data, including selected documents.
-        """
-        form = await super().edit_form(obj)
-        if obj and obj.required_documents:
-            form.required_documents.data = [str(doc.id) for doc in obj.required_documents]
-        return form
 
     async def insert_model(self, request: Request, data: dict) -> Any:
         """

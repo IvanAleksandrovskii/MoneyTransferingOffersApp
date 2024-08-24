@@ -1,7 +1,7 @@
 from typing import Any
 
+from fastapi import HTTPException
 from sqlalchemy import or_
-from sqlalchemy.orm import joinedload
 from starlette.requests import Request
 from wtforms import validators
 
@@ -41,9 +41,6 @@ class CountryAdmin(BaseAdminModel, model=Country):
     name_plural = "Countries"
     category = "Global"
 
-    def get_query(self):
-        return super().get_query().options(joinedload(Country.local_currency))
-
     def search_query(self, stmt, term):
         return stmt.outerjoin(Currency, Country.local_currency).filter(
             or_(
@@ -55,7 +52,9 @@ class CountryAdmin(BaseAdminModel, model=Country):
         )
 
     async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
-        if is_created:
-            logger.info(f"Created country: {model.name}, abbreviation: {model.abbreviation}")
-        else:
-            logger.info(f"Updated country: {model.name}, abbreviation: {model.abbreviation}")
+        try:
+            action = "Created" if is_created else "Updated"
+            logger.info(f"{action} country: {model.name}, abbreviation: {model.abbreviation}")
+        except Exception as e:
+            logger.error(f"Error in after_model_change for country: {str(e)}")
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while processing your request.")

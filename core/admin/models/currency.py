@@ -80,14 +80,8 @@ class CurrencyAdmin(BaseAdminModel, model=Currency):
 
     async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request):
         try:
-            if is_created:
-                logger.info(f"Created currency: {model.name} ({model.abbreviation})")
-            else:
-                logger.info(f"Updated currency: {model.name} ({model.abbreviation})")
-        except IntegrityError as e:
-            await request.app.state.db.rollback()
-            logger.warning(f"Integrity error when creating/updating currency: {e}")
-            raise HTTPException(status_code=400, detail="A currency with this name, abbreviation or symbol already exists.")
+            action = "Created" if is_created else "Updated"
+            logger.info(f"{action} currency: {model.name} ({model.abbreviation})")
         except Exception as e:
             logger.exception(f"Unexpected error occurred in after_model_change: {e}")
             raise HTTPException(status_code=500, detail="An unexpected error occurred while processing your request.")

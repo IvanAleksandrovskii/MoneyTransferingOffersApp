@@ -58,8 +58,11 @@ class TransferProviderAdmin(BaseAdminModel, model=TransferProvider):
                 return None
 
     async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
-        action = "Created" if is_created else "Updated"
-        logger.info(f"{action} transfer provider: {model.name}")
+        try:
+            action = "Created" if is_created else "Updated"
+            logger.info(f"{action} transfer provider: {model.name}")
+        except Exception as e:
+            logger.error(f"Error in after_model_change for transfer provider: {e}")
 
         # Process logo upload
         logo = data.get('logo')

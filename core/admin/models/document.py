@@ -35,7 +35,8 @@ class DocumentAdmin(BaseAdminModel, model=Document):
         return stmt.filter(Document.name.ilike(f"%{term}%"))
 
     async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
-        if is_created:
-            logger.info(f"Created document: {model.name}")
-        else:
-            logger.info(f"Updated document: {model.name}")
+        try:
+            action = "Created" if is_created else "Updated"
+            logger.info(f"{action} document: {model.name}")
+        except Exception as e:
+            logger.error(f"Error in after_model_change for document: {e}")
