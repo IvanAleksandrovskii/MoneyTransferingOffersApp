@@ -109,7 +109,7 @@ class BaseAdminModel(ModelView):
         except IntegrityError as e:
             error_message = str(e).split('\n')[0]
             logger.error(f"IntegrityError in delete_model: {error_message}")
-            raise HTTPException(status_code=400, detail=error_message)
+            raise HTTPException(status_code=500, detail=error_message)
         except SQLAlchemyError as e:
             logger.error(f"SQLAlchemyError in delete_model: {str(e)}")
             raise HTTPException(status_code=500, detail="An error occurred while deleting the record.")

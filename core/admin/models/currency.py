@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 from wtforms import validators
 from fastapi import HTTPException
+from starlette.responses import RedirectResponse
 
 from core import logger
 from core.admin.models.base import BaseAdminModel
@@ -53,17 +54,29 @@ class CurrencyAdmin(BaseAdminModel, model=Currency):
             )
         )
 
-    async def delete_model(self, request: Request, pk: Any) -> bool:
+    async def delete_model(self, request: Request, pk: Any) -> Any:
         try:
-            return await super().delete_model(request, pk)
-        except HTTPException as e:
-            if e.status_code == 400 and "cannot be deleted" in str(e.detail).lower():
-                logger.error("Cannot delete currency: it is set as the local currency for one or more countries")
-                raise HTTPException(
-                    status_code=400,
-                    detail="This currency cannot be deleted because it is set as the local currency for one or more countries."
-                )
-            raise
+            result = await super().delete_model(request, pk)
+            if result is None:
+                logger.warning(f"Delete operation for currency with pk {pk} returned None")
+                return RedirectResponse(request.url_for("admin:list", identity=self.identity), status_code=302)
+            return result
+        except IntegrityError as e:
+            error_message = str(e)
+            logger.error(f"IntegrityError in delete_model for currency: {error_message}")
+            if "foreign key constraint" in error_message.lower():
+                error = "This currency cannot be deleted because it is associated with one or more countries. Please remove the currency from all countries before deleting it."
+            else:
+                error = "An error occurred while deleting the currency. It may be referenced by other records."
+        except Exception as e:
+            logger.error(f"Unexpected error in delete_model for currency: {str(e)}")
+            error = "An unexpected error occurred while deleting the currency."
+
+        # Create URL and add error param
+        url = request.url_for("admin:list", identity=self.identity)
+        url = url.include_query_params(error=error)
+
+        return RedirectResponse(url, status_code=302)
 
     async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request):
         try:
