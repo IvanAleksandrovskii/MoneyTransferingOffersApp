@@ -25,7 +25,7 @@ services:
     depends_on:
       - pg
     environment:
-      - DEBUG=${DEBUG:-False}
+      - DEBUG=${DEBUG:-True}
       - APP_RUN_HOST=${APP_RUN_HOST:-0.0.0.0}
       - APP_RUN_PORT=${APP_RUN_PORT:-8000}
 
@@ -43,6 +43,8 @@ services:
       - USD_CURRENCY_CACHE_SEC=${USD_CURRENCY_CACHE_SEC:-1800}
       - OBJECTS_CACHE_SEC=${OBJECTS_CACHE_SEC:-60}
       - OBJECTS_CACHED_MAX_COUNT=${OBJECTS_CACHED_MAX_COUNT:-25}
+    volumes:
+      - app_data:/app/media  # Added volume for media only
     command: /app/start.sh
 
 networks:
@@ -52,3 +54,4 @@ networks:
 
 volumes:
   pg_data:
+  app_data:
