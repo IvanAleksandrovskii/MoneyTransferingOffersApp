@@ -1,7 +1,7 @@
 services:
 
   pg:
-    # latest or any fresh one, using modern version of postgres method for table's uuid increment
+    # latest or any fresh one, using modern version of postgres method for table's uuid increment (16.3)
     image: postgres:latest
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-postgres_db_tg_app}
