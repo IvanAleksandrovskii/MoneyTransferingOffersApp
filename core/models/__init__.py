@@ -1,5 +1,6 @@
 __all__ = ["Base", "db_helper", "Currency", "Country", "TransferProvider", "ProviderExchangeRate",
-           "Document", "TransferRule", "transfer_rule_documents"]
+           "Document", "TransferRule", "transfer_rule_documents", "TgUser", "TgUserLog",
+           "check_tables_exist", "create_tables"]
 
 
 from .base import Base
@@ -10,3 +11,4 @@ from .transfer_provider import TransferProvider
 from .exchange_rate import ProviderExchangeRate
 from .document import Document
 from .transfer_rule import TransferRule, transfer_rule_documents
+from .tg_logg_user import TgUser, TgUserLog, check_tables_exist, create_tables

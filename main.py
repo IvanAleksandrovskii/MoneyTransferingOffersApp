@@ -9,10 +9,11 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from sqladmin import Admin
+from sqlalchemy.exc import IntegrityError
 
 from core import settings
 from core import logger
-from core.models import db_helper
+from core.models import db_helper, check_tables_exist, create_tables
 from api import api_router
 
 from core.admin.models import (
@@ -22,6 +23,8 @@ from core.admin.models import (
     TransferProviderAdmin,
     TransferRuleAdmin,
     ProviderExchangeRateAdmin,
+    TgUserAdmin,
+    TgUserLogAdmin,
 )
 from core.admin import (
     sqladmin_authentication_backend,
@@ -33,6 +36,16 @@ from core.admin import (
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Startup
     logger.info("Starting up the FastAPI application...")
+
+    # TG logging tables creation
+    engine = db_helper.engine
+    logger.info("Checking if logging tables exist...")
+    tables_exist = await check_tables_exist(engine)
+    if tables_exist:
+        logger.info("Logging tables already exist")
+    if not tables_exist:
+        logger.info("Creating logging tables...")
+        await create_tables(engine)
 
     yield
 
@@ -59,6 +72,8 @@ admin.add_view(DocumentAdmin)
 admin.add_view(TransferProviderAdmin)
 admin.add_view(ProviderExchangeRateAdmin)
 admin.add_view(TransferRuleAdmin)
+admin.add_view(TgUserAdmin)
+admin.add_view(TgUserLogAdmin)
 
 main_app.include_router(router=api_router, prefix=settings.api_prefix.prefix)
 
@@ -82,6 +97,18 @@ async def catch_exceptions_middleware(request: Request, call_next):
 
         if isinstance(e, ValueError) and "badly formed hexadecimal UUID string" in str(e):
             return Response(status_code=204)
+
+        if isinstance(e, IntegrityError):
+            # Check if error message contains constraint name
+            if "duplicate key value violates unique constraint" in str(e):
+                # Extract constraint name
+                constraint_name = str(e).split('"')[1] if '"' in str(e) else "unknown"
+                field = constraint_name.split('_')[-1] if '_' in constraint_name else constraint_name
+                logger.warning(f"Attempt to violate unique constraint: {field}")
+                return JSONResponse(
+                    status_code=409,  # HTTP 409 Conflict
+                    content={"message": f"A record with this {field} already exists."}
+                )
 
         logger.exception(f"Unhandled exception: {str(e)}")
         return JSONResponse(
