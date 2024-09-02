@@ -18,8 +18,8 @@ tg_users_log = Table(
     Column('id', Integer, primary_key=True, autoincrement=True),
     Column('tg_user', String, ForeignKey('tg_users.tg_user'), nullable=False, index=True),
     Column('url_log', String, nullable=False),
-    Column('amount_log', String, nullable=False),
-    Column('currency_log', String, nullable=False),
+    Column('amount_log', String, nullable=True),
+    Column('currency_log', String, nullable=True),
     Column('created_at', DateTime(timezone=True), server_default=func.now()),
 )
 

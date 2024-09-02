@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
 class TgUserCreate(BaseModel):
@@ -8,5 +10,5 @@ class TgUserCreate(BaseModel):
 class TgUserLogCreate(BaseModel):
     tg_user: str
     url_log: str
-    amount_log: str
-    currency_log: str
+    amount_log: Optional[str] = Field(default=None)
+    currency_log: Optional[str] = Field(default=None)
