@@ -21,7 +21,8 @@ class TgUserLogAdmin(ModelView, model=TgUserLog):
     column_searchable_list = [TgUserLog.tg_user, TgUserLog.url_log, TgUserLog.currency_log,
                               TgUserLog.send_country_log, TgUserLog.receive_country_log, ]
     column_sortable_list = [TgUserLog.id, TgUserLog.tg_user, TgUserLog.url_log, TgUserLog.amount_log,
-                            TgUserLog.send_country_log, TgUserLog.receive_country_log, TgUserLog.created_at]
+                            TgUserLog.send_country_log, TgUserLog.receive_country_log, TgUserLog.created_at,
+                            TgUserLog.currency_log]
     column_filters = [TgUserLog.tg_user, TgUserLog.currency_log, TgUserLog.url_log, TgUserLog.amount_log,
                       TgUserLog.send_country_log, TgUserLog.receive_country_log, TgUserLog.created_at]
     can_create = False
