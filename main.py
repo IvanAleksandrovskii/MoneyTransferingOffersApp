@@ -68,7 +68,7 @@ main_app = FastAPI(
 # type: ignore
 main_app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://0.0.0.0:5173"],
+    allow_origins=["http://localhost:5173", "http://0.0.0.0:5173", "http://0.0.0.0:3000"],  # TODO: delete not needed before deploying
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
