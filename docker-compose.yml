@@ -47,6 +47,18 @@ services:
       - app_data:/app/media  # Added volume for media only
     command: /app/start.sh
 
+  pgadmin4:
+    image: dpage/pgadmin4
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    volumes:
+      - ./servers.json:/pgadmin4/servers.json
+    networks:
+      - inner_transfer_calculator_service
+
 networks:
   inner_transfer_calculator_service:
     external: false
