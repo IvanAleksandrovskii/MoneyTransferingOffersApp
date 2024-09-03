@@ -12,3 +12,5 @@ class TgUserLogCreate(BaseModel):
     url_log: str
     amount_log: Optional[str] = Field(default=None)
     currency_log: Optional[str] = Field(default=None)
+    send_country_log: Optional[str] = Field(default=None)
+    receive_country_log: Optional[str] = Field(default=None)

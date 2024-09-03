@@ -20,6 +20,8 @@ tg_users_log = Table(
     Column('url_log', String, nullable=False),
     Column('amount_log', String, nullable=True),
     Column('currency_log', String, nullable=True),
+    Column('send_country_log', String, nullable=True),
+    Column('receive_country_log', String, nullable=True),
     Column('created_at', DateTime(timezone=True), server_default=func.now()),
 )
 
@@ -46,6 +48,8 @@ class TgUserLog(Base_2):
     url_log = __table__.c.url_log
     amount_log = __table__.c.amount_log
     currency_log = __table__.c.currency_log
+    send_country_log = __table__.c.send_country_log
+    receive_country_log = __table__.c.receive_country_log
     created_at = __table__.c.created_at
 
     def __repr__(self):

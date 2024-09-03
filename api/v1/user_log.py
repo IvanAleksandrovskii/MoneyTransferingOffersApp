@@ -39,7 +39,9 @@ async def create_tg_user_log(log: TgUserLogCreate, db: AsyncSession = Depends(db
             tg_user=log.tg_user,
             url_log=log.url_log,
             amount_log=log.amount_log if log.amount_log else None,
-            currency_log=log.currency_log if log.currency_log else None
+            currency_log=log.currency_log if log.currency_log else None,
+            send_country_log=log.send_country_log if log.send_country_log else None,
+            receive_country_log=log.receive_country_log if log.receive_country_log else None
         )
         db.add(db_log)
         await db.commit()
