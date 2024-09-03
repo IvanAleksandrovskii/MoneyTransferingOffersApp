@@ -5,6 +5,7 @@ import logging
 from fastapi import FastAPI, Response, Request
 from fastapi.responses import ORJSONResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 import uvicorn
 
@@ -61,6 +62,16 @@ main_app = FastAPI(
     default_response_class=ORJSONResponse,
     title="Currency Transfer Rules API",
     description="API for querying provider's money-transfer rules",
+)
+
+# Fixing CORS
+# type: ignore
+main_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://0.0.0.0:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # SQLAdmin
