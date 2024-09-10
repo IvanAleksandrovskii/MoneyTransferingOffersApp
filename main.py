@@ -67,7 +67,7 @@ main_app = FastAPI(
 # Fixing CORS
 main_app.add_middleware(
     CORSMiddleware,  # type: ignore
-    allow_origins=["http://localhost:5173", "http://0.0.0.0:5173", "http://0.0.0.0:3000"],  # TODO: delete not needed before deploying
+    allow_origins=["http://sendmoneyto.ru", "https://sendmoneyto.ru", "http://0.0.0.0:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
