@@ -40,6 +40,9 @@ USD_CURRENCY_CACHE_SEC = int(os.getenv("USD_CURRENCY_CACHE_SEC", 1800))
 OBJECTS_CACHE_SEC = int(os.getenv("OBJECTS_CACHE_SEC", 60))
 OBJECTS_CACHED_MAX_COUNT = int(os.getenv("OBJECTS_CACHED_MAX_COUNT", 20))
 
+# CORS ENV variables
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
+
 
 class RunConfig(BaseModel):
     host: str = APP_RUN_HOST
@@ -83,6 +86,10 @@ class MediaConfig(BaseModel):
     url: str = '/media/'
 
 
+class CORSAllowedOriginsConfig(BaseModel):
+    allowed_origins: list[str] = ALLOWED_ORIGINS
+
+
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     api_prefix: APIPrefixConfig = APIPrefixConfig()
@@ -90,6 +97,7 @@ class Settings(BaseSettings):
     admin_panel: SQLAdminConfig = SQLAdminConfig()
     cache: CacheConfig = CacheConfig()
     media: MediaConfig = MediaConfig()
+    cors: CORSAllowedOriginsConfig = CORSAllowedOriginsConfig()
 
 
 settings = Settings()

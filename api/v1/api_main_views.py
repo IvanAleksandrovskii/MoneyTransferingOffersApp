@@ -55,8 +55,8 @@ async def get_transfer_rules(
             TransferRule.transfer_currency.has(Currency.is_active == True)
         )
         .options(
-            joinedload(TransferRule.send_country).joinedload(Country.local_currency.and_(Currency.is_active == True)),
-            joinedload(TransferRule.receive_country).joinedload(Country.local_currency.and_(Currency.is_active == True)),
+            joinedload(TransferRule.send_country).joinedload(Country.local_currency),
+            joinedload(TransferRule.receive_country).joinedload(Country.local_currency),
             joinedload(TransferRule.provider.and_(TransferProvider.is_active == True)),
             joinedload(TransferRule.transfer_currency.and_(Currency.is_active == True)),
             joinedload(TransferRule.required_documents.and_(Document.is_active == True))
