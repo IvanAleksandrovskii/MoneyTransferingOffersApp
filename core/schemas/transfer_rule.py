@@ -2,7 +2,7 @@ from typing import Optional, List
 from uuid import UUID
 from datetime import timedelta
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, model_validator
 
 from . import DocumentResponse
 from .base import BaseResponse
@@ -24,16 +24,16 @@ class TransferRuleDetails(BaseModel):
 
     required_documents: List[DocumentResponse]
 
-    original_amount: Optional[float] = Field(None, ge=0)
-    converted_amount: Optional[float] = Field(None, ge=0)
+    original_amount: Optional[float] = None
+    converted_amount: Optional[float] = None
     transfer_currency: CurrencyResponse
-    amount_received: Optional[float] = Field(None, ge=0)
-    transfer_fee: Optional[float] = Field(None, ge=0)
-    transfer_fee_percentage: float = Field(..., ge=0, le=100)
-    min_transfer_amount: float = Field(..., gt=0)
-    max_transfer_amount: float = Field(..., gt=0)
-    exchange_rate: Optional[float] = Field(None, gt=0)
-    conversion_path: List[str]
+    amount_received: Optional[float] = None
+    transfer_fee: Optional[float] = None
+    transfer_fee_percentage: float
+    min_transfer_amount: float
+    max_transfer_amount: Optional[float] = None
+    exchange_rate: Optional[float] = None
+    conversion_path: Optional[List[str]] = None
 
     @model_validator(mode='after')
     def validate_transfer_times(self) -> 'TransferRuleDetails':
@@ -66,9 +66,9 @@ class DetailedTransferRuleResponse(BaseResponse):
 
     transfer_currency: CurrencyResponse
 
-    min_transfer_amount: float = Field(..., gt=0)
-    max_transfer_amount: float = Field(..., gt=0)
-    fee_percentage: float = Field(..., ge=0, le=100)
+    min_transfer_amount: float
+    max_transfer_amount: Optional[float] = None
+    fee_percentage: float
     transfer_method: str
 
     min_transfer_time: TimeDeltaInfo

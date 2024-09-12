@@ -40,7 +40,7 @@ class TransferRule(Base):
     # Transfer details
     fee_percentage: Mapped[float] = mapped_column(Float, nullable=False)
     min_transfer_amount: Mapped[float] = mapped_column(Float, nullable=False)
-    max_transfer_amount: Mapped[Optional[float]] = mapped_column(Float, nullable=False)
+    max_transfer_amount: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     # Transfer currency information
     transfer_currency_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("currencies.id", ondelete="CASCADE"), nullable=False)
@@ -48,7 +48,7 @@ class TransferRule(Base):
                                                                  lazy="joined")
 
     # Additional transfer information
-    transfer_method: Mapped[str] = mapped_column(String, nullable=False)  # Online / Office / Need to call an operator, etc.. TODO: maybe enum or binary?
+    transfer_method: Mapped[str] = mapped_column(String, nullable=False)  # Online / Office / Need to call an operator, etc..
 
     min_transfer_time: Mapped[timedelta] = mapped_column(Interval, nullable=False)
     max_transfer_time: Mapped[timedelta] = mapped_column(Interval, nullable=False)
@@ -78,9 +78,11 @@ class TransferRule(Base):
         """
         if key == 'fee_percentage' and (value < 0 or value > 100):
             raise ValueError('fee_percentage must be between 0 and 100')
-        if key in ['min_transfer_amount', 'max_transfer_amount'] and value < 0:
-            raise ValueError(f'{key} must be non-negative')
-        if key == 'max_transfer_amount' and hasattr(self, 'min_transfer_amount') and value < self.min_transfer_amount:
+        if key == 'min_transfer_amount' and value < 0:
+            raise ValueError('min_transfer_amount must be non-negative')
+        if key == 'max_transfer_amount' and value is not None and value < 0:
+            raise ValueError('max_transfer_amount must be non-negative or None')
+        if key == 'max_transfer_amount' and value is not None and hasattr(self, 'min_transfer_amount') and self.min_transfer_amount is not None and value < self.min_transfer_amount:
             raise ValueError('max_transfer_amount must be greater than or equal to min_transfer_amount')
         return value
 

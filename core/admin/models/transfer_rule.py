@@ -1,6 +1,5 @@
 from typing import Any
 
-from sqladmin import ModelView
 from sqlalchemy import select, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -96,9 +95,9 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
         'receive_country': {'validators': [validators.DataRequired()]},
         'provider': {'validators': [validators.DataRequired()]},
         'transfer_currency': {'validators': [validators.DataRequired()]},
-        'fee_percentage': {'validators': [validators.DataRequired(), validators.NumberRange(min=0, max=100)]},
+        'fee_percentage': {'validators': [validators.Optional(), validators.NumberRange(min=0, max=100)]},
         'min_transfer_amount': {'validators': [validators.DataRequired(), validators.NumberRange(min=0)]},
-        'max_transfer_amount': {'validators': [validators.DataRequired(), validators.NumberRange(min=0)]},
+        'max_transfer_amount': {'validators': [validators.Optional(), validators.NumberRange(min=0)]},
         'transfer_method': {'validators': [validators.DataRequired()]},
     }
 

@@ -77,22 +77,33 @@ async def process_rule(session: AsyncSession, rule: TransferRule, from_currency:
 
         if optional_amount is not None:
             if from_currency and from_currency.id != rule.transfer_currency.id:
-                converted_amount, exchange_rate, conversion_path = await CurrencyConversionService.convert_amount(
-                    session=session,
-                    amount=optional_amount,
-                    from_currency=from_currency,
-                    to_currency=rule.transfer_currency,
-                    provider=rule.provider
-                )
+                try:
+                    converted_amount, exchange_rate, conversion_path = await CurrencyConversionService.convert_amount(
+                        session=session,
+                        amount=optional_amount,
+                        from_currency=from_currency,
+                        to_currency=rule.transfer_currency,
+                        provider=rule.provider
+                    )
+                except HTTPException as e:
+                    if e.status_code == 400 and e.detail == "Unable to perform currency conversion":
+                        logger.info(f"Skipping rule {rule.id}: Unable to perform currency conversion")
+                        return None
+                    raise
             else:
                 converted_amount = optional_amount
                 exchange_rate = 1.0
                 conversion_path = [rule.transfer_currency.abbreviation]
 
-            if not (rule.min_transfer_amount <= converted_amount <= rule.max_transfer_amount):
+            if converted_amount < rule.min_transfer_amount:
                 logger.info(
-                    f"Rule {rule.id} skipped: amount {converted_amount} is outside of allowed range "
-                    f"[{rule.min_transfer_amount}, {rule.max_transfer_amount}]"
+                    f"Rule {rule.id} skipped: amount {converted_amount} is less than minimum {rule.min_transfer_amount}"
+                )
+                return None
+
+            if rule.max_transfer_amount is not None and converted_amount > rule.max_transfer_amount:
+                logger.info(
+                    f"Rule {rule.id} skipped: amount {converted_amount} is greater than maximum {rule.max_transfer_amount}"
                 )
                 return None
 
@@ -101,13 +112,19 @@ async def process_rule(session: AsyncSession, rule: TransferRule, from_currency:
             amount_received = round(converted_amount - transfer_fee, 2)
         elif from_currency and from_currency.id != rule.transfer_currency.id:
             dummy_amount = 100
-            _, exchange_rate, conversion_path = await CurrencyConversionService.convert_amount(
-                session=session,
-                amount=dummy_amount,
-                from_currency=from_currency,
-                to_currency=rule.transfer_currency,
-                provider=rule.provider
-            )
+            try:
+                _, exchange_rate, conversion_path = await CurrencyConversionService.convert_amount(
+                    session=session,
+                    amount=dummy_amount,
+                    from_currency=from_currency,
+                    to_currency=rule.transfer_currency,
+                    provider=rule.provider
+                )
+            except HTTPException as e:
+                if e.status_code == 400 and e.detail == "Unable to perform currency conversion":
+                    logger.info(f"Skipping rule {rule.id}: Unable to perform currency conversion")
+                    return None
+                raise
         else:
             conversion_path = [rule.transfer_currency.abbreviation]
 
