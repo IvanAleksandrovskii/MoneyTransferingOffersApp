@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy import select, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+# from sqlalchemy.orm import selectinload
 from starlette.requests import Request
 from wtforms import SelectMultipleField, validators
 from wtforms.widgets import ListWidget, CheckboxInput
@@ -26,6 +26,7 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
     column_list = [
         "formatted_transfer_rule",
         TransferRule.fee_percentage,
+        TransferRule.fee_fixed,
         TransferRule.is_active,
         TransferRule.id,
         TransferRule.provider_id,
@@ -38,6 +39,7 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
 
     column_sortable_list = [
         TransferRule.fee_percentage,
+        TransferRule.fee_fixed,
         TransferRule.is_active,
         TransferRule.provider_id,
         TransferRule.send_country_id,
@@ -49,6 +51,7 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
     column_filters = [
         TransferRule.id,
         TransferRule.fee_percentage,
+        TransferRule.fee_fixed,
         TransferRule.is_active,
         TransferRule.provider_id,
         TransferRule.send_country_id,
@@ -85,7 +88,7 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
     # Define which fields to include in the create/edit form
     form_columns = [
         'provider', 'send_country', 'receive_country', 'transfer_currency',
-        'fee_percentage', 'min_transfer_amount', 'max_transfer_amount',
+        'fee_percentage', 'fee_fixed', 'min_transfer_amount', 'max_transfer_amount',
         'transfer_method', 'min_transfer_time', 'max_transfer_time', 'required_documents', 'is_active'
     ]
 
@@ -96,6 +99,7 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
         'provider': {'validators': [validators.DataRequired()]},
         'transfer_currency': {'validators': [validators.DataRequired()]},
         'fee_percentage': {'validators': [validators.Optional(), validators.NumberRange(min=0, max=100)]},
+        'fee_fixed': {'validators': [validators.Optional(), validators.NumberRange(min=0)]},
         'min_transfer_amount': {'validators': [validators.DataRequired(), validators.NumberRange(min=0)]},
         'max_transfer_amount': {'validators': [validators.Optional(), validators.NumberRange(min=0)]},
         'transfer_method': {'validators': [validators.DataRequired()]},
@@ -149,19 +153,19 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
             finally:
                 await session.close()
 
-    async def get_one(self, _id):
-        """
-        Retrieve a single TransferRule instance with related documents.
-        """
-        async with AsyncSession(async_sqladmin_db_helper.engine) as session:
-            try:
-                stmt = select(TransferRule).options(
-                    selectinload(TransferRule.required_documents)
-                ).filter_by(id=_id)
-                result = await session.execute(stmt)
-                return result.scalar_one_or_none()
-            finally:
-                await session.close()
+    # async def get_one(self, _id):
+    #     """
+    #     Retrieve a single TransferRule instance with related documents.
+    #     """
+    #     async with AsyncSession(async_sqladmin_db_helper.engine) as session:
+    #         try:
+    #             stmt = select(TransferRule).options(
+    #                 selectinload(TransferRule.required_documents)
+    #             ).filter_by(id=_id)
+    #             result = await session.execute(stmt)
+    #             return result.scalar_one_or_none()
+    #         finally:
+    #             await session.close()
 
     async def insert_model(self, request: Request, data: dict) -> Any:
         """

@@ -38,7 +38,19 @@ class TransferRule(Base):
                                                       back_populates="transfer_rules", lazy="joined")
 
     # Transfer details
-    fee_percentage: Mapped[float] = mapped_column(Float, nullable=False)
+    fee_percentage: Mapped[float] = mapped_column(Float, nullable=False)  # TODO: Make an alternative fee represented
+    #                                                                          by fixed amount charge, make it
+    #                                                                          nullable (if have value in 'fee_fixed'
+    #                                                                          process with special logic),
+    #
+    # TODO: After making fee_fixed variable, fix calculations for main endpoint to include both cases.
+    #  New scenario should happen in case on non-null value in fee_fixed
+    # TODO: For API endpoints nothing should change for now, frontend is build for this config, so I need to calculate
+    #  everything to fill the API response exactly the same for new case as if it was old case. Need to check the
+    #  response schemas and main endpoint only, for other endpoints nothing should change for now, new field should
+    #  be ignored for now, so no update
+    fee_fixed: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+
     min_transfer_amount: Mapped[float] = mapped_column(Float, nullable=False)
     max_transfer_amount: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
@@ -48,7 +60,7 @@ class TransferRule(Base):
                                                                  lazy="joined")
 
     # Additional transfer information
-    transfer_method: Mapped[str] = mapped_column(String, nullable=False)  # Online / Office / Need to call an operator, etc..
+    transfer_method: Mapped[str] = mapped_column(String, nullable=False)  # Online / Office / Need to call an operator, etc...
 
     min_transfer_time: Mapped[timedelta] = mapped_column(Interval, nullable=False)
     max_transfer_time: Mapped[timedelta] = mapped_column(Interval, nullable=False)
@@ -78,6 +90,9 @@ class TransferRule(Base):
         """
         if key == 'fee_percentage' and (value < 0 or value > 100):
             raise ValueError('fee_percentage must be between 0 and 100')
+        elif key == 'fee_fixed' and value is not None:
+            if value < 0:
+                raise ValueError('fee_fixed must be non-negative')
         if key == 'min_transfer_amount' and value < 0:
             raise ValueError('min_transfer_amount must be non-negative')
         if key == 'max_transfer_amount' and value is not None and value < 0:

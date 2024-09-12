@@ -74,6 +74,7 @@ async def process_rule(session: AsyncSession, rule: TransferRule, from_currency:
         amount_received = None
         transfer_fee = None
         exchange_rate = None
+        calculated_fee_percentage = rule.fee_percentage
 
         if optional_amount is not None:
             if from_currency and from_currency.id != rule.transfer_currency.id:
@@ -107,9 +108,17 @@ async def process_rule(session: AsyncSession, rule: TransferRule, from_currency:
                 )
                 return None
 
-            fee_percentage = rule.fee_percentage / 100
-            transfer_fee = round(converted_amount * fee_percentage, 2)
+            if rule.fee_fixed is not None and rule.fee_percentage == 0:
+                transfer_fee = rule.fee_fixed
+                calculated_fee_percentage = (transfer_fee / converted_amount) * 100
+            else:
+                fee_percentage = rule.fee_percentage / 100
+                transfer_fee = round(converted_amount * fee_percentage, 2)
+                calculated_fee_percentage = rule.fee_percentage
+
             amount_received = round(converted_amount - transfer_fee, 2)
+            calculated_fee_percentage = round(calculated_fee_percentage, 2)
+
         elif from_currency and from_currency.id != rule.transfer_currency.id:
             dummy_amount = 100
             try:
@@ -148,7 +157,7 @@ async def process_rule(session: AsyncSession, rule: TransferRule, from_currency:
             transfer_currency=CurrencyResponse.model_validate(rule.transfer_currency),
             amount_received=amount_received,
             transfer_fee=transfer_fee,
-            transfer_fee_percentage=rule.fee_percentage,
+            transfer_fee_percentage=calculated_fee_percentage,
             min_transfer_amount=rule.min_transfer_amount,
             max_transfer_amount=rule.max_transfer_amount,
             exchange_rate=exchange_rate,
@@ -170,6 +179,8 @@ async def select_best_rule(
     logger.info(f"Selecting best rule from {len(rules)} rules")
 
     async def process_and_rank_rule(rule: TransferRule) -> Tuple[Optional[TransferRuleDetails], int]:
+
+        # TODO: Fix, mb make cachable to decrease the load
         from_currency = await session.get(Currency, from_currency_id) if from_currency_id else None
 
         result = await process_rule(session, rule, from_currency, optional_amount)
