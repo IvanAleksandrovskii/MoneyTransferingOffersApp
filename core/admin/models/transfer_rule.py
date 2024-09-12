@@ -11,10 +11,11 @@ from wtforms.widgets import ListWidget, CheckboxInput
 
 from core import logger
 from core.admin import async_sqladmin_db_helper
+from core.admin.models.base import BaseAdminModel
 from core.models import TransferRule, Document, TransferProvider, Country, Currency
 
 
-class TransferRuleAdmin(ModelView, model=TransferRule):
+class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
     """
     Admin interface for managing TransferRule objects.
     """

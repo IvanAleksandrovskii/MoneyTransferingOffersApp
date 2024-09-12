@@ -2,7 +2,6 @@ from async_lru import alru_cache
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from datetime import datetime, timedelta
 
 from core import logger, settings
 from core.models import Currency, TransferProvider, ProviderExchangeRate
