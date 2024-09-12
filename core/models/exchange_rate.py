@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Float, DateTime, UniqueConstraint, Index, func, select
+from sqlalchemy import ForeignKey, Float, DateTime, UniqueConstraint, Index, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship, joinedload
 
-from core.models import Base, TransferProvider, Currency, db_helper
+from core.models import Base, TransferProvider, Currency
 
 
 class ProviderExchangeRate(Base):

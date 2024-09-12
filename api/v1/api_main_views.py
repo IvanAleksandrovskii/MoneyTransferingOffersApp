@@ -169,6 +169,16 @@ async def process_rule(session: AsyncSession, rule: TransferRule, from_currency:
         return None
 
 
+@alru_cache(maxsize=settings.cache.objects_cached_max_count, ttl=settings.cache.objects_cache_sec)
+async def get_cached_currency(session: AsyncSession, currency_id: UUID) -> Optional[Currency]:
+    if currency_id is None:
+        return None
+    currency = await session.get(Currency, currency_id)
+    if currency and currency.is_active:
+        return currency
+    return None
+
+
 async def select_best_rule(
         session: AsyncSession,
         rules: List[TransferRule],
@@ -180,8 +190,7 @@ async def select_best_rule(
 
     async def process_and_rank_rule(rule: TransferRule) -> Tuple[Optional[TransferRuleDetails], int]:
 
-        # TODO: Fix, mb make cachable to decrease the load
-        from_currency = await session.get(Currency, from_currency_id) if from_currency_id else None
+        from_currency = await get_cached_currency(session, from_currency_id)
 
         result = await process_rule(session, rule, from_currency, optional_amount)
         if result:

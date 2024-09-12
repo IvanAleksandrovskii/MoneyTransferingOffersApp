@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy import select, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-# from sqlalchemy.orm import selectinload
+
 from starlette.requests import Request
 from wtforms import SelectMultipleField, validators
 from wtforms.widgets import ListWidget, CheckboxInput
@@ -105,6 +105,24 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
         'transfer_method': {'validators': [validators.DataRequired()]},
     }
 
+    form_widget_args = {
+        'fee_fixed': {
+            'placeholder': 'Fixed money value, if used, make \'Fee Percentage\' equal 0',
+        },
+        'fee_percentage': {
+            'placeholder': 'Fee with percentage'
+        },
+        'min_transfer_amount': {
+            'placeholder': 'Min amount'
+        },
+        'max_transfer_amount': {
+            'placeholder': 'Max amount (can be None, but not working for the frontend for now if None)'
+        },
+        'transfer_method': {
+            'placeholder': 'How to make the transfer'
+        }
+    }
+
     def search_query(self, stmt, term):
         return stmt.filter(
             or_(
@@ -152,20 +170,6 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
                 return [(str(doc.id), doc.name) for doc in documents]
             finally:
                 await session.close()
-
-    # async def get_one(self, _id):
-    #     """
-    #     Retrieve a single TransferRule instance with related documents.
-    #     """
-    #     async with AsyncSession(async_sqladmin_db_helper.engine) as session:
-    #         try:
-    #             stmt = select(TransferRule).options(
-    #                 selectinload(TransferRule.required_documents)
-    #             ).filter_by(id=_id)
-    #             result = await session.execute(stmt)
-    #             return result.scalar_one_or_none()
-    #         finally:
-    #             await session.close()
 
     async def insert_model(self, request: Request, data: dict) -> Any:
         """

@@ -12,6 +12,7 @@ from .provider import ProviderResponse
 from .time_delta_info import TimeDeltaInfo
 
 
+# TODO: API response and schemas are made to follow the frontend configuration, fee_fixed is skipped because of that
 class TransferRuleDetails(BaseModel):
     id: UUID
 

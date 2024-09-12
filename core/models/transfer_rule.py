@@ -38,17 +38,7 @@ class TransferRule(Base):
                                                       back_populates="transfer_rules", lazy="joined")
 
     # Transfer details
-    fee_percentage: Mapped[float] = mapped_column(Float, nullable=False)  # TODO: Make an alternative fee represented
-    #                                                                          by fixed amount charge, make it
-    #                                                                          nullable (if have value in 'fee_fixed'
-    #                                                                          process with special logic),
-    #
-    # TODO: After making fee_fixed variable, fix calculations for main endpoint to include both cases.
-    #  New scenario should happen in case on non-null value in fee_fixed
-    # TODO: For API endpoints nothing should change for now, frontend is build for this config, so I need to calculate
-    #  everything to fill the API response exactly the same for new case as if it was old case. Need to check the
-    #  response schemas and main endpoint only, for other endpoints nothing should change for now, new field should
-    #  be ignored for now, so no update
+    fee_percentage: Mapped[float] = mapped_column(Float, nullable=False)
     fee_fixed: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     min_transfer_amount: Mapped[float] = mapped_column(Float, nullable=False)
