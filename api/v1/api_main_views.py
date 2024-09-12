@@ -77,7 +77,7 @@ async def get_transfer_rules(
     logger.info(f"Found {len(rules)} transfer rules")
 
     from_currency = None
-    rule_details = []
+    provider_rules = {}
 
     for rule in rules:
         try:
@@ -161,13 +161,19 @@ async def get_transfer_rules(
                 exchange_rate=exchange_rate,
                 conversion_path=conversion_path
             )
-            rule_details.append(rule_detail)
+
+            # Update provider_rules dictionary
+            if rule.provider_id not in provider_rules or len(conversion_path) < len(provider_rules[rule.provider_id].conversion_path):
+                provider_rules[rule.provider_id] = rule_detail
+
             logger.info(f"Successfully processed rule {rule.id}")
 
         except HTTPException as e:
             logger.warning(f"Conversion failed for rule {rule.id}: {str(e)}")
         except Exception as e:
             logger.error(f"Unexpected error processing rule {rule.id}: {str(e)}", exc_info=True)
+
+    rule_details = list(provider_rules.values())
 
     if not rule_details:
         logger.warning("No valid transfer rules found for the specified parameters")
