@@ -5,7 +5,7 @@ import uuid
 from sqlalchemy import (
     ForeignKey, Float, String, Index,
     CheckConstraint, Table, Column, Interval,
-    Integer, UniqueConstraint, UUID
+    Integer, UUID
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
@@ -68,9 +68,6 @@ class TransferRule(Base):
         # Constraints to ensure data integrity
         CheckConstraint('min_transfer_amount <= max_transfer_amount', name='check_min_max_transfer_amount'),
         CheckConstraint('fee_percentage >= 0 AND fee_percentage < 100', name='check_fee_percentage_range'),
-        # Ensure uniqueness of the transfer rule
-        UniqueConstraint('send_country_id', 'receive_country_id', 'provider_id', 'transfer_currency_id',
-                         name='uq_transfer_rule_unique_combination'),
     )
 
     @validates('fee_percentage', 'min_transfer_amount', 'max_transfer_amount')

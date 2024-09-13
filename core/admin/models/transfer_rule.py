@@ -1,7 +1,6 @@
 from typing import Any
 
 from sqlalchemy import select, or_
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from starlette.requests import Request
@@ -173,30 +172,15 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
 
     async def insert_model(self, request: Request, data: dict) -> Any:
         """
-        Custom insert method to handle creation or update of TransferRule instances.
-        Implements upsert logic based on unique constraints.
+        Custom insert method to handle creation of TransferRule instances.
+        Always creates a new record.
         """
         logger.info("Custom insert_model method called")
         async with AsyncSession(async_sqladmin_db_helper.engine) as session:
             try:
-                # Check if rule with same send_country, receive_country, provider, transfer_currency already exists
-                existing_rule = await session.execute(
-                    select(TransferRule).filter_by(
-                        send_country_id=data['send_country'],
-                        receive_country_id=data['receive_country'],
-                        provider_id=data['provider'],
-                        transfer_currency_id=data['transfer_currency']
-                    )
-                )
-                existing_rule = existing_rule.scalar_one_or_none()
-
-                if existing_rule:
-                    logger.info(f"Updating existing TransferRule with id: {existing_rule.id}")
-                    model = existing_rule
-                else:
-                    logger.info("Creating new TransferRule")
-                    model = TransferRule()
-                    session.add(model)
+                logger.info("Creating new TransferRule")
+                model = TransferRule()
+                session.add(model)
 
                 # Update Model Fields
                 for key, value in data.items():
@@ -213,15 +197,9 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
 
                 await session.commit()
                 await session.refresh(model)
-                logger.info(
-                    f"TransferRule {'updated' if existing_rule else 'created'} successfully with id: {model.id}")
+                logger.info(f"TransferRule created successfully with id: {model.id}")
 
                 return model
-
-            except IntegrityError as e:
-                await session.rollback()
-                logger.error(f"IntegrityError in insert_model: {str(e)}")
-                raise ValueError("A transfer rule with these parameters already exists.")
 
             except Exception as e:
                 await session.rollback()
