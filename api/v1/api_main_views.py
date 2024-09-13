@@ -284,6 +284,20 @@ async def get_transfer_rules(
             logger.warning("No valid transfer rules found for the specified parameters")
             raise HTTPException(status_code=404, detail="No valid transfer rules found for the specified parameters")
 
+        # Sort rule_details if amount is provided
+        if optional_amount is not None:
+            def calculate_fee_percentage(rule):
+                if rule.converted_amount and rule.amount_received and rule.converted_amount > 0:
+                    fee = rule.converted_amount - rule.amount_received
+                    return (fee / rule.converted_amount) * 100
+                return float('inf')  # Nothing can be more than 'inf'
+
+            # Filter out rules with negative converted_amount
+            rule_details = [rule for rule in rule_details if
+                            rule.converted_amount is None or rule.converted_amount >= 0]
+
+            rule_details.sort(key=calculate_fee_percentage)
+
         logger.info(f"Returning {len(rule_details)} transfer rules")
 
         # Construct and return the final response
