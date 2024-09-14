@@ -75,6 +75,7 @@ async def process_rule(session: AsyncSession, rule: TransferRule, from_currency:
         transfer_fee = None
         exchange_rate = None
         calculated_fee_percentage = rule.fee_percentage
+        conversion_path = [rule.transfer_currency.abbreviation]
 
         if optional_amount is not None:
             if from_currency and from_currency.id != rule.transfer_currency.id:
@@ -94,19 +95,6 @@ async def process_rule(session: AsyncSession, rule: TransferRule, from_currency:
             else:
                 converted_amount = optional_amount
                 exchange_rate = 1.0
-                conversion_path = [rule.transfer_currency.abbreviation]
-
-            if converted_amount < rule.min_transfer_amount:
-                logger.info(
-                    f"Rule {rule.id} skipped: amount {converted_amount} is less than minimum {rule.min_transfer_amount}"
-                )
-                return None
-
-            if rule.max_transfer_amount is not None and converted_amount > rule.max_transfer_amount:
-                logger.info(
-                    f"Rule {rule.id} skipped: amount {converted_amount} is greater than maximum {rule.max_transfer_amount}"
-                )
-                return None
 
             if rule.fee_fixed is not None and rule.fee_percentage == 0:
                 transfer_fee = rule.fee_fixed
@@ -134,8 +122,6 @@ async def process_rule(session: AsyncSession, rule: TransferRule, from_currency:
                     logger.info(f"Skipping rule {rule.id}: Unable to perform currency conversion")
                     return None
                 raise
-        else:
-            conversion_path = [rule.transfer_currency.abbreviation]
 
         return TransferRuleDetails(
             id=rule.id,
@@ -189,11 +175,19 @@ async def select_best_rule(
     logger.info(f"Selecting best rule from {len(rules)} rules")
 
     async def process_and_rank_rule(rule: TransferRule) -> Tuple[Optional[TransferRuleDetails], int]:
-
         from_currency = await get_cached_currency(session, from_currency_id)
 
         result = await process_rule(session, rule, from_currency, optional_amount)
         if result:
+            # Check if the converted amount is within the rule's limits
+            if optional_amount is not None:
+                if result.converted_amount < rule.min_transfer_amount:
+                    logger.info(f"Rule {rule.id} skipped: amount {result.converted_amount} is less than minimum {rule.min_transfer_amount}")
+                    return None, 3
+                if rule.max_transfer_amount is not None and result.converted_amount > rule.max_transfer_amount:
+                    logger.info(f"Rule {rule.id} skipped: amount {result.converted_amount} is greater than maximum {rule.max_transfer_amount}")
+                    return None, 3
+
             # Rank: 1 for single currency path, 2 for multi-currency path
             rank = 1 if len(result.conversion_path) == 1 else 2
             return result, rank
