@@ -63,3 +63,24 @@ class UserService:
                 logger.exception(f"Error in is_superuser: {e}")
             finally:
                 await session.close()
+
+    @staticmethod
+    async def update_username(tg_user: str, new_username: str | None) -> bool:
+        async for session in db_helper.session_getter():
+            try:
+                user = await session.execute(select(TgUser).where(TgUser.tg_user == tg_user))
+                user = user.scalar_one_or_none()
+                if user:
+                    user.username = new_username
+                    await session.commit()
+                    logger.info(f"Updated username for user {tg_user} to {new_username}")
+                    return True
+                else:
+                    logger.warning(f"User {tg_user} not found for username update")
+                    return False
+            except Exception as e:
+                logger.exception(f"Error in update_username: {e}")
+                await session.rollback()
+                return False
+            finally:
+                await session.close()
