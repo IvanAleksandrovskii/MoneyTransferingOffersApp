@@ -1,4 +1,3 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from core import logger
@@ -33,37 +32,34 @@ class UserService:
 
     @staticmethod
     async def get_user(tg_user: str) -> TgUser | None:
-        session = None
-        try:
-            async for session in db_helper.session_getter():
+        async for session in db_helper.session_getter():
+            try:
                 result = await session.execute(select(TgUser).where(TgUser.tg_user == tg_user))
                 return result.scalar_one_or_none()
-        except Exception as e:
-            logger.exception(f"Error in get_user: {e}")
-        finally:
-            await session.close()
+            except Exception as e:
+                logger.exception(f"Error in get_user: {e}")
+            finally:
+                await session.close()
 
     @staticmethod
     async def get_all_users() -> list[TgUser]:
-        session = None
-        try:
-            async for session in db_helper.session_getter():
+        async for session in db_helper.session_getter():
+            try:
                 result = await session.execute(select(TgUser))
                 return result.scalars().unique().all()
-        except Exception as e:
-            logger.exception(f"Error in get_all_users: {e}")
-        finally:
-            await session.close()
+            except Exception as e:
+                logger.exception(f"Error in get_all_users: {e}")
+            finally:
+                await session.close()
 
     @classmethod
     async def is_superuser(cls, chat_id: str) -> bool:
-        session = None
-        try:
-            async for session in db_helper.session_getter():
+        async for session in db_helper.session_getter():
+            try:
                 result = await session.execute(select(TgUser).where(TgUser.tg_user == chat_id))
                 user = result.scalar_one_or_none()
                 return user is not None and user.is_superuser
-        except Exception as e:
-            logger.exception(f"Error in is_superuser: {e}")
-        finally:
-            await session.close()
+            except Exception as e:
+                logger.exception(f"Error in is_superuser: {e}")
+            finally:
+                await session.close()

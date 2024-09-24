@@ -60,7 +60,7 @@ services:
       - pg
     environment:
       - DEBUG=${DEBUG:-False}
-      - BOT_TOKEN=${BOT_TOKEN:-7624353668:AAF5Nvnj2HTkf7wnW-MYpgXBByyby13pOEc}
+      - TGBOT_TOKEN=${TGBOT_TOKEN:-7322997021:AAHil4yx54uaAaJKXgYzjYDwC76KiIpTKwc}
       - TGBOT_WELCOME_MESSAGE_CACHED_TIME=${TGBOT_WELCOME_MESSAGE_CACHED_TIME:-60}
 
       - POSTGRES_DB=${POSTGRES_DB:-postgres_db_tg_app}

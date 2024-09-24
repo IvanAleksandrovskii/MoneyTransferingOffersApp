@@ -10,8 +10,8 @@ from aiogram.types import InputMediaPhoto, InputMediaVideo, InputMediaAudio, Inp
 from core.models import db_helper, WelcomeMessage
 
 from core import settings
-from bot.logger import logger
-from bot.services import UserService
+from bot.bot_logger import logger
+from bot.user_service import UserService
 
 BOT_TOKEN = settings.bot.token
 
@@ -54,7 +54,9 @@ async def start_handler(message: types.Message):
 
         except Exception as e:
             logger.error(f"Database error in start_handler: {e}")
+
             await message.answer("Извините, произошла ошибка. Пожалуйста, попробуйте позже.")
+
         finally:
             await session.close()
 
@@ -98,20 +100,6 @@ async def start_broadcast(message: types.Message, state: FSMContext):
         await message.answer("Извините, произошла ошибка. Пожалуйста, попробуйте позже.")
 
 
-# @dp.message(Command("done"))
-# async def process_done_command(message: types.Message, state: FSMContext):
-#     data = await state.get_data()
-#     messages = data.get('messages', [])
-#
-#     if not messages:
-#         await message.answer(
-#             "Вы не добавили ни одного сообщения для рассылки. Пожалуйста, добавьте хотя бы одно сообщение.")
-#         return
-#
-#     await state.set_state(AdminBroadcastStates.WAITING_FOR_CONFIRMATION)
-#     await message.answer(
-#         f"Вы добавили {len(messages)} сообщение(й) для рассылки. Вы уверены, что хотите начать рассылку? (да/нет)")
-
 @dp.message(Command("done"))
 async def process_done_command(message: types.Message, state: FSMContext):
     data = await state.get_data()
@@ -124,7 +112,7 @@ async def process_done_command(message: types.Message, state: FSMContext):
 
     await message.answer("Вот предварительный просмотр вашей рассылки:")
 
-    # Отправляем предварительный просмотр сообщений
+    # Send preview messages
     media_group = []
     document_group = []
     text_messages = []
@@ -144,21 +132,21 @@ async def process_done_command(message: types.Message, state: FSMContext):
         else:
             other_messages.append(msg)
 
-    # Отправка группы медиафайлов (фото, видео, аудио)
+    # Send media (photo, video, audio)
     if media_group:
         for i in range(0, len(media_group), 10):
             await message.bot.send_media_group(message.chat.id, media=media_group[i:i+10])
 
-    # Отправка группы документов
+    # Send documents
     if document_group:
         for i in range(0, len(document_group), 10):
             await message.bot.send_media_group(message.chat.id, media=document_group[i:i+10])
 
-    # Отправка текстовых сообщений
+    # Send text messages
     for text in text_messages:
         await message.answer(text)
 
-    # Отправка остальных типов сообщений
+    # Send other messages
     for msg in other_messages:
         if msg.content_type == ContentType.ANIMATION:
             await message.bot.send_animation(message.chat.id, msg.animation.file_id, caption=msg.caption)
@@ -237,21 +225,21 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
                 else:
                     other_messages.append(msg)
 
-            # Отправка группы медиафайлов (фото, видео, аудио)
+            # Send media (photo, video, audio)
             if media_group:
                 for i in range(0, len(media_group), 10):
                     await message.bot.send_media_group(int(user.tg_user), media=media_group[i:i+10])
 
-            # Отправка группы документов
+            # Send documents
             if document_group:
                 for i in range(0, len(document_group), 10):
                     await message.bot.send_media_group(int(user.tg_user), media=document_group[i:i+10])
 
-            # Отправка текстовых сообщений
+            # Send text messages
             for text in text_messages:
                 await message.bot.send_message(int(user.tg_user), text)
 
-            # Отправка остальных типов сообщений
+            # Send other messages
             for msg in other_messages:
                 if msg.content_type == ContentType.ANIMATION:
                     await message.bot.send_animation(int(user.tg_user), msg.animation.file_id, caption=msg.caption)
@@ -269,7 +257,7 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
                 elif msg.content_type == ContentType.CONTACT:
                     await message.bot.send_contact(int(user.tg_user), phone_number=msg.contact.phone_number,
                                                    first_name=msg.contact.first_name, last_name=msg.contact.last_name)
-                elif msg.content_type == ContentType.POLL:
+                elif msg.content_type == ContentType.POLL:  # TODO: Mark as not supported for now
                     await message.bot.send_poll(int(user.tg_user), question=msg.poll.question,
                                                 options=[option.text for option in msg.poll.options],
                                                 is_anonymous=msg.poll.is_anonymous,

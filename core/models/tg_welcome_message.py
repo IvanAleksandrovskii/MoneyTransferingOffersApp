@@ -3,7 +3,7 @@ from sqlalchemy import Table, Column, String, MetaData, inspect, Integer, select
 from sqlalchemy.ext.declarative import declarative_base
 
 from core import settings
-from bot.logger import logger
+from bot.bot_logger import logger
 
 metadata_welcome_message = MetaData()
 
@@ -32,7 +32,7 @@ class WelcomeMessage(Base_3):
     @classmethod
     @alru_cache(maxsize=1, ttl=settings.bot.welcome_message_cached_time)
     async def get_message(cls, session):
-        default_message = "Welcome to our service!"
+        default_message = "Welcome to our service!"  # TODO: Move the fallback message to a config file
         try:
             result = await session.execute(select(cls))
             _welcome_message = result.scalar_one_or_none()
