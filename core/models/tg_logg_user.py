@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, String, Integer, DateTime, func, ForeignKey, MetaData
+from sqlalchemy import Table, Column, String, Integer, DateTime, func, ForeignKey, MetaData, inspect, text, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -9,7 +9,9 @@ tg_users = Table(
     metadata_logg,
     Column('id', Integer, primary_key=True, autoincrement=True),
     Column('tg_user', String, nullable=False, unique=True, index=True),
+    Column('username', String, nullable=True, unique=True, index=True),
     Column('created_at', DateTime(timezone=True), server_default=func.now()),
+    Column('is_superuser', Boolean, default=False, nullable=False),
 )
 
 tg_users_log = Table(
@@ -31,6 +33,12 @@ Base_2 = declarative_base(metadata=metadata_logg)
 class TgUser(Base_2):
     __table__ = tg_users
     logs = relationship("TgUserLog", back_populates="user", lazy='noload')
+
+    id = __table__.c.id
+    tg_user = __table__.c.tg_user
+    username = __table__.c.username
+    created_at = __table__.c.created_at
+    is_superuser = __table__.c.is_superuser
 
     def __repr__(self):
         return f"{self.tg_user}"
@@ -59,17 +67,25 @@ class TgUserLog(Base_2):
         return f"(id={self.id}, url_log={self.url_log}, created_at={self.created_at})"
 
 
-async def create_tables(engine):
+async def add_missing_columns(engine):
     async with engine.begin() as conn:
-        await conn.run_sync(metadata_logg.create_all)
-
-
-async def check_tables_exist(engine):
-    async with engine.connect() as conn:
+        inspector = await conn.run_sync(inspect)
         for table in metadata_logg.sorted_tables:
-            exists = await conn.run_sync(
-                lambda sync_conn: sync_conn.dialect.has_table(sync_conn, table.name)
-            )
-            if not exists:
-                return False
-    return True
+            existing_columns = await conn.run_sync(lambda sync_conn: inspector.get_columns(table.name))
+            existing_column_names = {col['name'] for col in existing_columns}
+            for column in table.columns:
+                if column.name not in existing_column_names:
+                    alter_stmt = text(f"ALTER TABLE {table.name} ADD COLUMN {column.name} {column.type}")
+                    await conn.execute(alter_stmt)
+                    print(f"Added column {column.name} to table {table.name}")
+
+
+async def check_and_update_tables(engine):
+    async with engine.begin() as conn:
+        inspector = await conn.run_sync(inspect)
+        for table in metadata_logg.sorted_tables:
+            if not await conn.run_sync(lambda sync_conn: inspector.has_table(table.name)):
+                await conn.run_sync(metadata_logg.create_all)
+                print(f"Created table {table.name}")
+            else:
+                await add_missing_columns(engine)

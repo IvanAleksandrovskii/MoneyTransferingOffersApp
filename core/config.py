@@ -43,6 +43,11 @@ OBJECTS_CACHED_MAX_COUNT = int(os.getenv("OBJECTS_CACHED_MAX_COUNT", 20))
 # CORS ENV variables
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
 
+# TGBot ENV variables
+TGBOT_TOKEN = os.getenv("TGBOT_TOKEN")
+TGBOT_WELCOME_MESSAGE_CACHED_TIME = int(os.getenv("TGBOT_WELCOME_MESSAGE_CACHED_TIME", 60))
+TGBOT_DEBUG = os.getenv("TGBOT_DEBUG", "False").lower() in ('true', '1')
+
 
 class RunConfig(BaseModel):
     host: str = APP_RUN_HOST
@@ -90,6 +95,12 @@ class CORSAllowedOriginsConfig(BaseModel):
     allowed_origins: list[str] = ALLOWED_ORIGINS
 
 
+class TGBotConfig(BaseModel):
+    token: str = TGBOT_TOKEN
+    welcome_message_cached_time: int = TGBOT_WELCOME_MESSAGE_CACHED_TIME
+    debug: bool = TGBOT_DEBUG
+
+
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     api_prefix: APIPrefixConfig = APIPrefixConfig()
@@ -98,6 +109,7 @@ class Settings(BaseSettings):
     cache: CacheConfig = CacheConfig()
     media: MediaConfig = MediaConfig()
     cors: CORSAllowedOriginsConfig = CORSAllowedOriginsConfig()
+    bot: TGBotConfig = TGBotConfig()
 
 
 settings = Settings()
@@ -123,8 +135,7 @@ def setup_logging() -> logging.Logger:
     )
     stream_handler.setFormatter(stream_formatter)
 
-    # TODO: write some acceptable naming logic
-    new_logger = logging.getLogger("MainLogger")
+    new_logger = logging.getLogger("APP")
     new_logger.setLevel(log_level)
     new_logger.addHandler(stream_handler)
 

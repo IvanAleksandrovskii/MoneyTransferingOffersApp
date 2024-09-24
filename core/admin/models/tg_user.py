@@ -3,12 +3,13 @@ from core.models import TgUser, TgUserLog
 
 
 class TgUserAdmin(ModelView, model=TgUser):
-    column_list = [TgUser.id, TgUser.tg_user, TgUser.created_at]
-    column_searchable_list = [TgUser.id, TgUser.tg_user]
-    column_sortable_list = [TgUser.id, TgUser.created_at]
-    column_filters = [TgUser.tg_user]
+    column_list = [TgUser.id, TgUser.tg_user, TgUser.username, TgUser.created_at, TgUser.is_superuser]
+    column_searchable_list = [TgUser.id, TgUser.tg_user, TgUser.username]
+    column_sortable_list = [TgUser.id, TgUser.created_at, TgUser.is_superuser, TgUser.tg_user, TgUser.username]
+    column_filters = [TgUser.tg_user, TgUser.username, TgUser.is_superuser]
+    column_details_list = [TgUser.id, TgUser.tg_user, TgUser.username, TgUser.created_at, TgUser.is_superuser, TgUser.logs]
     can_create = False
-    can_edit = False
+    can_edit = True
     can_delete = True
     name = "Telegram User"
     name_plural = "Telegram Users"

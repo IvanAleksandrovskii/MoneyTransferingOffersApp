@@ -50,6 +50,25 @@ services:
       - app_data:/app/media  # Added volume for media only
     command: /app/start.sh
 
+  bot:
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
+    networks:
+      - inner_transfer_calculator_service
+    depends_on:
+      - pg
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - BOT_TOKEN=${BOT_TOKEN:-7624353668:AAF5Nvnj2HTkf7wnW-MYpgXBByyby13pOEc}
+      - TGBOT_WELCOME_MESSAGE_CACHED_TIME=${TGBOT_WELCOME_MESSAGE_CACHED_TIME:-60}
+
+      - POSTGRES_DB=${POSTGRES_DB:-postgres_db_tg_app}
+      - POSTGRES_ADDRESS=${POSTGRES_ADDRESS:-pg}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+    command: /app/bot/start.sh
+
 networks:
   inner_transfer_calculator_service:
     external: false

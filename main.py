@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 
 from core import settings
 from core import logger
-from core.models import db_helper, check_tables_exist, create_tables
+from core.models import db_helper, check_and_update_tables, WelcomeMessage
 from api import api_router
 
 from core.admin.models import (
@@ -26,11 +26,13 @@ from core.admin.models import (
     ProviderExchangeRateAdmin,
     TgUserAdmin,
     TgUserLogAdmin,
+    WelcomeMessageAdmin,
 )
 from core.admin import (
     sqladmin_authentication_backend,
     async_sqladmin_db_helper,
 )
+from core.models.tg_welcome_message import check_table
 
 
 @asynccontextmanager
@@ -40,13 +42,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # TG logging tables creation
     engine = db_helper.engine
-    logger.info("Checking if logging tables exist...")
-    tables_exist = await check_tables_exist(engine)
-    if tables_exist:
-        logger.info("Logging tables already exist")
-    if not tables_exist:
-        logger.info("Creating logging tables...")
-        await create_tables(engine)
+
+    try:
+        logger.info("Checking if logging tables exist...")
+        await check_and_update_tables(engine)
+
+        # Welcome message for TG bot
+        await check_table(engine)
+    except Exception as e:
+        logger.exception(f"Error in lifespan on table hand writen creation/update (no auto migration tables with ): {e}")
 
     yield
 
@@ -84,6 +88,7 @@ admin.add_view(ProviderExchangeRateAdmin)
 admin.add_view(TransferRuleAdmin)
 admin.add_view(TgUserAdmin)
 admin.add_view(TgUserLogAdmin)
+admin.add_view(WelcomeMessageAdmin)
 
 main_app.include_router(router=api_router, prefix=settings.api_prefix.prefix)
 
