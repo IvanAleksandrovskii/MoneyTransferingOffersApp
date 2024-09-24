@@ -1,6 +1,6 @@
 import asyncio
 
-from aiogram.enums import ContentType
+from aiogram.enums import ContentType, ParseMode
 from aiogram.filters import CommandStart, Command
 from aiogram import Bot, Dispatcher, types
 from aiogram.fsm.context import FSMContext
@@ -12,6 +12,13 @@ from core.models import db_helper, WelcomeMessage
 from core import settings
 from bot.bot_logger import logger
 from bot.user_service import UserService
+
+# import html
+#
+#
+# def escape_html(text: str) -> str:
+#     return html.escape(text)
+
 
 BOT_TOKEN = settings.bot.token
 
@@ -90,7 +97,7 @@ async def start_broadcast(message: types.Message, state: FSMContext):
             "• Местоположение\n"
             "• Место (venue)\n"
             "• Контакт\n"
-            "• Опрос\n\n"
+            # "• Опрос\n\n"
             "Вы можете отправить несколько сообщений разных типов. "
             "Когда закончите, отправьте команду /done для подтверждения рассылки."
         )
@@ -100,80 +107,56 @@ async def start_broadcast(message: types.Message, state: FSMContext):
         await message.answer("Извините, произошла ошибка. Пожалуйста, попробуйте позже.")
 
 
+# import html
+
+# def clean_html(text):
+#     """Clean the text from unsupported HTML tags."""
+#     allowed_tags = ['b', 'strong', 'i', 'em', 'u', 's', 'strike', 'del', 'a', 'code', 'pre']
+#     for tag in allowed_tags:
+#         text = text.replace(f'<{tag}>', f'&lt;{tag}&gt;')
+#         text = text.replace(f'</{tag}>', f'&lt;/{tag}&gt;')
+#     return html.escape(text, quote=False)
+
+
 @dp.message(Command("done"))
 async def process_done_command(message: types.Message, state: FSMContext):
     data = await state.get_data()
     messages = data.get('messages', [])
 
     if not messages:
-        await message.answer(
-            "Вы не добавили ни одного сообщения для рассылки. Пожалуйста, добавьте хотя бы одно сообщение.")
+        await message.answer("Вы не добавили ни одного сообщения для рассылки. Пожалуйста, добавьте хотя бы одно сообщение.")
         return
 
     await message.answer("Вот предварительный просмотр вашей рассылки:")
 
-    # Send preview messages
-    media_group = []
-    document_group = []
-    text_messages = []
-    other_messages = []
+    for msg_data in messages:
+        msg = msg_data['message']
+        entities = msg_data['entities']
 
-    for msg in messages:
         if msg.content_type == ContentType.TEXT:
-            text_messages.append(msg.text)
+            await message.answer(msg.text, entities=entities)
         elif msg.content_type == ContentType.PHOTO:
-            media_group.append(InputMediaPhoto(media=msg.photo[-1].file_id, caption=msg.caption))
+            await message.answer_photo(msg.photo[-1].file_id, caption=msg.caption, caption_entities=entities)
         elif msg.content_type == ContentType.VIDEO:
-            media_group.append(InputMediaVideo(media=msg.video.file_id, caption=msg.caption))
+            await message.answer_video(msg.video.file_id, caption=msg.caption, caption_entities=entities)
         elif msg.content_type == ContentType.AUDIO:
-            media_group.append(InputMediaAudio(media=msg.audio.file_id, caption=msg.caption))
+            await message.answer_audio(msg.audio.file_id, caption=msg.caption, caption_entities=entities)
         elif msg.content_type == ContentType.DOCUMENT:
-            document_group.append(InputMediaDocument(media=msg.document.file_id, caption=msg.caption))
-        else:
-            other_messages.append(msg)
-
-    # Send media (photo, video, audio)
-    if media_group:
-        for i in range(0, len(media_group), 10):
-            await message.bot.send_media_group(message.chat.id, media=media_group[i:i+10])
-
-    # Send documents
-    if document_group:
-        for i in range(0, len(document_group), 10):
-            await message.bot.send_media_group(message.chat.id, media=document_group[i:i+10])
-
-    # Send text messages
-    for text in text_messages:
-        await message.answer(text)
-
-    # Send other messages
-    for msg in other_messages:
-        if msg.content_type == ContentType.ANIMATION:
-            await message.bot.send_animation(message.chat.id, msg.animation.file_id, caption=msg.caption)
+            await message.answer_document(msg.document.file_id, caption=msg.caption, caption_entities=entities)
+        elif msg.content_type == ContentType.ANIMATION:
+            await message.answer_animation(msg.animation.file_id, caption=msg.caption, caption_entities=entities)
         elif msg.content_type == ContentType.VOICE:
-            await message.bot.send_voice(message.chat.id, msg.voice.file_id, caption=msg.caption)
+            await message.answer_voice(msg.voice.file_id, caption=msg.caption, caption_entities=entities)
         elif msg.content_type == ContentType.VIDEO_NOTE:
-            await message.bot.send_video_note(message.chat.id, msg.video_note.file_id)
+            await message.answer_video_note(msg.video_note.file_id)
         elif msg.content_type == ContentType.STICKER:
-            await message.bot.send_sticker(message.chat.id, msg.sticker.file_id)
+            await message.answer_sticker(msg.sticker.file_id)
         elif msg.content_type == ContentType.LOCATION:
-            await message.bot.send_location(message.chat.id, msg.location.latitude, msg.location.longitude)
+            await message.answer_location(msg.location.latitude, msg.location.longitude)
         elif msg.content_type == ContentType.VENUE:
-            await message.bot.send_venue(message.chat.id, msg.venue.location.latitude,
-                                         msg.venue.location.longitude, msg.venue.title, msg.venue.address)
+            await message.answer_venue(msg.venue.location.latitude, msg.venue.location.longitude, msg.venue.title, msg.venue.address)
         elif msg.content_type == ContentType.CONTACT:
-            await message.bot.send_contact(message.chat.id, phone_number=msg.contact.phone_number,
-                                           first_name=msg.contact.first_name, last_name=msg.contact.last_name)
-        elif msg.content_type == ContentType.POLL:
-            await message.bot.send_poll(message.chat.id, question=msg.poll.question,
-                                        options=[option.text for option in msg.poll.options],
-                                        is_anonymous=msg.poll.is_anonymous,
-                                        type=msg.poll.type,
-                                        allows_multiple_answers=msg.poll.allows_multiple_answers,
-                                        correct_option_id=msg.poll.correct_option_id,
-                                        explanation=msg.poll.explanation,
-                                        open_period=msg.poll.open_period,
-                                        close_date=msg.poll.close_date)
+            await message.answer_contact(msg.contact.phone_number, msg.contact.first_name, msg.contact.last_name)
         else:
             await message.answer(f"Неподдерживаемый тип сообщения: {msg.content_type}")
 
@@ -186,7 +169,12 @@ async def process_done_command(message: types.Message, state: FSMContext):
 async def process_broadcast_message(message: types.Message, state: FSMContext):
     data = await state.get_data()
     messages = data.get('messages', [])
-    messages.append(message)
+
+    messages.append({
+        'message': message,
+        'entities': message.entities or message.caption_entities
+    })
+
     await state.update_data(messages=messages)
     await message.answer("Сообщение добавлено в рассылку. Отправьте еще сообщения или используйте /done для завершения.")
 
@@ -206,45 +194,24 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
 
     for user in all_users:
         try:
-            media_group = []
-            document_group = []
-            text_messages = []
-            other_messages = []
+            for msg_data in broadcast_messages:
+                msg = msg_data['message']
+                entities = msg_data['entities']
 
-            for msg in broadcast_messages:
                 if msg.content_type == ContentType.TEXT:
-                    text_messages.append(msg.text)
+                    await message.bot.send_message(int(user.tg_user), msg.text, entities=entities)
                 elif msg.content_type == ContentType.PHOTO:
-                    media_group.append(InputMediaPhoto(media=msg.photo[-1].file_id, caption=msg.caption))
+                    await message.bot.send_photo(int(user.tg_user), msg.photo[-1].file_id, caption=msg.caption, caption_entities=entities)
                 elif msg.content_type == ContentType.VIDEO:
-                    media_group.append(InputMediaVideo(media=msg.video.file_id, caption=msg.caption))
+                    await message.bot.send_video(int(user.tg_user), msg.video.file_id, caption=msg.caption, caption_entities=entities)
                 elif msg.content_type == ContentType.AUDIO:
-                    media_group.append(InputMediaAudio(media=msg.audio.file_id, caption=msg.caption))
+                    await message.bot.send_audio(int(user.tg_user), msg.audio.file_id, caption=msg.caption, caption_entities=entities)
                 elif msg.content_type == ContentType.DOCUMENT:
-                    document_group.append(InputMediaDocument(media=msg.document.file_id, caption=msg.caption))
-                else:
-                    other_messages.append(msg)
-
-            # Send media (photo, video, audio)
-            if media_group:
-                for i in range(0, len(media_group), 10):
-                    await message.bot.send_media_group(int(user.tg_user), media=media_group[i:i+10])
-
-            # Send documents
-            if document_group:
-                for i in range(0, len(document_group), 10):
-                    await message.bot.send_media_group(int(user.tg_user), media=document_group[i:i+10])
-
-            # Send text messages
-            for text in text_messages:
-                await message.bot.send_message(int(user.tg_user), text)
-
-            # Send other messages
-            for msg in other_messages:
-                if msg.content_type == ContentType.ANIMATION:
-                    await message.bot.send_animation(int(user.tg_user), msg.animation.file_id, caption=msg.caption)
+                    await message.bot.send_document(int(user.tg_user), msg.document.file_id, caption=msg.caption, caption_entities=entities)
+                elif msg.content_type == ContentType.ANIMATION:
+                    await message.bot.send_animation(int(user.tg_user), msg.animation.file_id, caption=msg.caption, caption_entities=entities)
                 elif msg.content_type == ContentType.VOICE:
-                    await message.bot.send_voice(int(user.tg_user), msg.voice.file_id, caption=msg.caption)
+                    await message.bot.send_voice(int(user.tg_user), msg.voice.file_id, caption=msg.caption, caption_entities=entities)
                 elif msg.content_type == ContentType.VIDEO_NOTE:
                     await message.bot.send_video_note(int(user.tg_user), msg.video_note.file_id)
                 elif msg.content_type == ContentType.STICKER:
@@ -252,21 +219,11 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
                 elif msg.content_type == ContentType.LOCATION:
                     await message.bot.send_location(int(user.tg_user), msg.location.latitude, msg.location.longitude)
                 elif msg.content_type == ContentType.VENUE:
-                    await message.bot.send_venue(int(user.tg_user), msg.venue.location.latitude,
-                                                 msg.venue.location.longitude, msg.venue.title, msg.venue.address)
+                    await message.bot.send_venue(int(user.tg_user), msg.venue.location.latitude, msg.venue.location.longitude, msg.venue.title, msg.venue.address)
                 elif msg.content_type == ContentType.CONTACT:
-                    await message.bot.send_contact(int(user.tg_user), phone_number=msg.contact.phone_number,
-                                                   first_name=msg.contact.first_name, last_name=msg.contact.last_name)
-                elif msg.content_type == ContentType.POLL:  # TODO: Mark as not supported for now
-                    await message.bot.send_poll(int(user.tg_user), question=msg.poll.question,
-                                                options=[option.text for option in msg.poll.options],
-                                                is_anonymous=msg.poll.is_anonymous,
-                                                type=msg.poll.type,
-                                                allows_multiple_answers=msg.poll.allows_multiple_answers,
-                                                correct_option_id=msg.poll.correct_option_id,
-                                                explanation=msg.poll.explanation,
-                                                open_period=msg.poll.open_period,
-                                                close_date=msg.poll.close_date)
+                    await message.bot.send_contact(int(user.tg_user), msg.contact.phone_number, msg.contact.first_name, msg.contact.last_name)
+                else:
+                    await message.bot.send_message(int(user.tg_user), f"Извините, не поддерживаемый тип контента: {msg.content_type}.")
 
         except Exception as e:
             logger.info(f"Failed to send broadcast to user {user.tg_user}: {str(e)}")
