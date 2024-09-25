@@ -20,6 +20,7 @@ dp = Dispatcher()
 confirming_words = ["да", "yes", "конечно", "отправить", "send", "accept", "absolutely"]
 error_message = ("Извините, произошла ошибка. Пожалуйста, попробуйте позже или обратитесь к разработчику с подробной "
                  "информацией: когда и после какого действия произошла ошибка.")
+user_error_message = settings.bot.user_error_message
 
 user_service = UserService()
 
@@ -58,7 +59,7 @@ async def start_handler(message: types.Message):
         except Exception as e:
             logger.error(f"Database error in start_handler: {e}")
 
-            await message.answer(error_message)
+            await message.answer(user_error_message)
 
         finally:
             await session.close()

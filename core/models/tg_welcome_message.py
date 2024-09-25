@@ -32,7 +32,7 @@ class WelcomeMessage(Base_3):
     @classmethod
     @alru_cache(maxsize=1, ttl=settings.bot.welcome_message_cached_time)
     async def get_message(cls, session):
-        default_message = "Welcome to our service!"  # TODO: Move the fallback message to a config file
+        default_message = settings.bot.fallback_greeting_user_message
         try:
             result = await session.execute(select(cls))
             _welcome_message = result.scalar_one_or_none()

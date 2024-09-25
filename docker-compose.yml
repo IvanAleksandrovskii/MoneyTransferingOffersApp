@@ -62,6 +62,8 @@ services:
       - DEBUG=${DEBUG:-False}
       - TGBOT_TOKEN=${TGBOT_TOKEN:-7322997021:AAHil4yx54uaAaJKXgYzjYDwC76KiIpTKwc}
       - TGBOT_WELCOME_MESSAGE_CACHED_TIME=${TGBOT_WELCOME_MESSAGE_CACHED_TIME:-60}
+      - TGBOT_USER_ERROR_MESSAGE=${TGBOT_USER_ERROR_MESSAGE:-Извините, произошла ошибка. Пожалуйста, попробуйте позже.}
+      - TGBOT_USER_FALLBACK_GREETING=${TGBOT_USER_FALLBACK_GREETING:-Привет, {username}, добро пожаловать!}
 
       - POSTGRES_DB=${POSTGRES_DB:-postgres_db_tg_app}
       - POSTGRES_ADDRESS=${POSTGRES_ADDRESS:-pg}

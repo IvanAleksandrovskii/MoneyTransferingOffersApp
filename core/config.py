@@ -47,6 +47,8 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
 TGBOT_TOKEN = os.getenv("TGBOT_TOKEN")
 TGBOT_WELCOME_MESSAGE_CACHED_TIME = int(os.getenv("TGBOT_WELCOME_MESSAGE_CACHED_TIME", 60))
 TGBOT_DEBUG = os.getenv("TGBOT_DEBUG", "False").lower() in ('true', '1')
+TGBOT_USER_ERROR_MESSAGE = os.getenv("TGBOT_USER_ERROR_MESSAGE", "Извините, произошла ошибка. Пожалуйста, попробуйте позже.")
+TGBOT_USER_FALLBACK_GREETING = os.getenv("TGBOT_USER_FALLBACK_GREETING", "Привет, {username}, добро пожаловать!")
 
 
 class RunConfig(BaseModel):
@@ -99,6 +101,8 @@ class TGBotConfig(BaseModel):
     token: str = TGBOT_TOKEN
     welcome_message_cached_time: int = TGBOT_WELCOME_MESSAGE_CACHED_TIME
     debug: bool = TGBOT_DEBUG
+    user_error_message: str = TGBOT_USER_ERROR_MESSAGE
+    fallback_greeting_user_message: str = TGBOT_USER_FALLBACK_GREETING
 
 
 class Settings(BaseSettings):
