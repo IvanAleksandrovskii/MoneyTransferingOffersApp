@@ -185,6 +185,7 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
 
         all_users = await user_service.get_all_users()
         failed_users = []
+        users_counter = 0
 
         for user in all_users:
             try:
@@ -219,6 +220,8 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
                     else:
                         await message.bot.send_message(int(user.tg_user), f"Извините, не поддерживаемый тип контента: {msg.content_type}.")
 
+                    users_counter += 1
+
                     # Sleep to avoid API-flooding/spam block from Telegram
                     await asyncio.sleep(0.05)
 
@@ -229,10 +232,11 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
 
         if failed_users:
             await message.answer(
-                f"Рассылка выполнена, но не удалось отправить сообщение {len(failed_users)} пользователям. "
+                f"Рассылка выполнена, успешно отправлено {users_counter} пользователям, "
+                f"но не удалось отправить сообщение {len(failed_users)} пользователям. "
                 f"Пользователи могли не активировать чат с ботом.")
         else:
-            await message.answer("Рассылка выполнена успешно всем пользователям.")
+            await message.answer(f"Рассылка выполнена успешно: отправлено всем {users_counter} пользователям.")
 
         await state.clear()
     except Exception as e:
