@@ -44,8 +44,8 @@ OBJECTS_CACHED_MAX_COUNT = int(os.getenv("OBJECTS_CACHED_MAX_COUNT", 20))
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
 
 # TGBot ENV variables
-TGBOT_URL = os.getenv("TGBOT_URL", "https://6011-184-22-9-133.ngrok-free.app")
-TGBOT_TOKEN = os.getenv("TGBOT_TOKEN", "7794442779:AAEEE88vacxNWz5G7Lmyr0s5NP_pvtZm79c")
+TGBOT_URL = os.getenv("TGBOT_URL", "https://fed5-184-22-9-133.ngrok-free.app")
+TGBOT_TOKEN = os.getenv("BOT_TOKEN")
 TGBOT_WELCOME_MESSAGE_CACHED_TIME = int(os.getenv("TGBOT_WELCOME_MESSAGE_CACHED_TIME", 60))
 TGBOT_DEBUG = os.getenv("TGBOT_DEBUG", "False").lower() in ('true', '1')
 TGBOT_USER_ERROR_MESSAGE = os.getenv("TGBOT_USER_ERROR_MESSAGE", "Извините, произошла ошибка. Пожалуйста, попробуйте позже.")

@@ -154,17 +154,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     
     logger.info("Application shutdown complete")
 
-main_app = FastAPI(
-    lifespan=lifespan,
-    default_response_class=ORJSONResponse,
-)
-
-@main_app.post("/webhook/bot/")
-async def handle_webhook(request: Request):
-    """Endpoint for handling webhooks from Telegram"""
-    return await bot_manager.handle_webhook_request(request)
-
-
 # ORJSONResponse to increase performance
 main_app = FastAPI(
     lifespan=lifespan,
@@ -172,6 +161,12 @@ main_app = FastAPI(
     title="Currency Transfer Rules API",
     description="API for querying provider's money-transfer rules",
 )
+
+@main_app.post("/webhook/bot/")
+async def handle_webhook(request: Request):
+    """Endpoint for handling webhooks from Telegram"""
+    return await bot_manager.handle_webhook_request(request)
+
 
 # Fixing CORS
 main_app.add_middleware(
