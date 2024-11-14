@@ -14,14 +14,14 @@ load_dotenv(".env")
 # App ENV variables
 APP_RUN_HOST = str(os.getenv("APP_RUN_HOST", "0.0.0.0"))
 APP_RUN_PORT = int(os.getenv("APP_RUN_PORT", 8000))
-DEBUG = os.getenv("DEBUG", "False").lower() in ('true', '1')
+DEBUG = os.getenv("DEBUG", "True").lower() in ('true', '1')
 
 
 # Database ENV variables
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_ADDRESS = os.getenv("POSTGRES_ADDRESS", "pg")
-POSTGRES_USER = os.getenv("POSTGRES_USER")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "postgres_db_tg_app")
+POSTGRES_ADDRESS = os.getenv("POSTGRES_ADDRESS", "0.0.0.0")
+POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password")
 
 POSTGRES_POOL_SIZE = int(os.getenv("POSTGRES_POOL_SIZE", 10))
 POSTGRES_MAX_OVERFLOW = int(os.getenv("POSTGRES_MAX_OVERFLOW", 20))
@@ -45,7 +45,7 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
 
 # TGBot ENV variables
 TGBOT_URL = os.getenv("TGBOT_URL", "https://6011-184-22-9-133.ngrok-free.app")
-TGBOT_TOKEN = os.getenv("TGBOT_TOKEN")
+TGBOT_TOKEN = os.getenv("TGBOT_TOKEN", "7794442779:AAEEE88vacxNWz5G7Lmyr0s5NP_pvtZm79c")
 TGBOT_WELCOME_MESSAGE_CACHED_TIME = int(os.getenv("TGBOT_WELCOME_MESSAGE_CACHED_TIME", 60))
 TGBOT_DEBUG = os.getenv("TGBOT_DEBUG", "False").lower() in ('true', '1')
 TGBOT_USER_ERROR_MESSAGE = os.getenv("TGBOT_USER_ERROR_MESSAGE", "Извините, произошла ошибка. Пожалуйста, попробуйте позже.")
@@ -108,6 +108,46 @@ class TGBotConfig(BaseModel):
     fallback_greeting_user_message: str = TGBOT_USER_FALLBACK_GREETING
 
 
+class WebhookConfig(BaseModel):
+    path: str = "/webhook/bot/"
+
+
+class BotAdminTexts(BaseModel):
+    """
+    RUSSIAN VERSION
+    """
+    full_success_broadcast: str = "Рассылка выполнена успешно: отправлено всем пользователям:"
+    not_all_broadcast_1: str = "Рассылка выполнена, успешно отправлено пользователям"
+    not_all_broadcast_2: str = "Но не удалось отправить сообщение пользователям:" 
+    not_all_broadcast_3: str = "Пользователи могли не активировать чат с ботом."
+    unsupported_file_type: str = "Извините, не поддерживаемый тип контента:"
+    unsupported_message_type: str = "Неподдерживаемый тип сообщения: "
+    broadcast_cancelled: str = "Рассылка отменена"
+    added_to_broadcast: str = "Сообщение добавлено в рассылку. Отправьте еще сообщения или используйте /done для завершения."
+    boadcast_approve: str = "Вы добавили сообщение(й) для рассылки. Вы уверены, что хотите начать рассылку? (да/нет)"
+    braodcast_preview: str = "Вот предварительный просмотр вашей рассылки:"
+    empty_broadcast: str = "Вы не добавили ни одного сообщения для рассылки. Пожалуйста, добавьте хотя бы одно сообщение. Вы сможете отменить на разу после этого."
+    greeting: str = """Введите сообщение для массовой рассылки. Вы можете отправить следующие типы контента:\n\n
+        • Текст\n
+        • Фото\n
+        • Видео\n
+        • Аудио\n
+        • Документ\n
+        • Анимация (GIF)\n
+        • Голосовое сообщение\n
+        • Видеозапись\n
+        • Стикер\n
+        • Местоположение\n
+        • Место (venue)\n
+        • Контакт\n
+        Вы можете отправить несколько сообщений разных типов. 
+        Когда закончите, отправьте команду /done для подтверждения рассылки."""
+    no_admin_rules: str = "У вас нет прав для выполнения этой команды."
+    error_message: str = "Something went wrong. Please try again later or contact the developer."
+    confirming_words: list[str] = ["да", "yes", "конечно", "отправить", "send", "accept", "absolutely", "lf"]
+
+
+
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     api_prefix: APIPrefixConfig = APIPrefixConfig()
@@ -117,6 +157,8 @@ class Settings(BaseSettings):
     media: MediaConfig = MediaConfig()
     cors: CORSAllowedOriginsConfig = CORSAllowedOriginsConfig()
     bot: TGBotConfig = TGBotConfig()
+    bot_admin_text: BotAdminTexts = BotAdminTexts()
+    webhook: WebhookConfig = WebhookConfig()
 
 
 settings = Settings()

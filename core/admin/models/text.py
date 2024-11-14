@@ -13,9 +13,9 @@ from core.admin import async_sqladmin_db_helper
 
 
 class TextAdmin(BaseAdminModel, model=Text):
-    column_list = [Text.id, Text.context_marker, Text.is_default_media, Text.is_active, Text.reading_pagination, Text.created_at, Text.updated_at]
-    column_details_list = [Text.id, Text.context_marker, Text.body, Text.is_default_media, Text.is_active, Text.reading_pagination, Text.created_at, Text.updated_at, Text.media_files]
-    column_sortable_list = [Text.id, Text.context_marker, Text.is_default_media, Text.is_active, Text.created_at, Text.updated_at]
+    column_list = [Text.id, Text.context_marker, Text.is_default_media, Text.is_active, Text.reading_pagination]  # , Text.created_at, Text.updated_at
+    column_details_list = [Text.id, Text.context_marker, Text.body, Text.is_default_media, Text.is_active, Text.reading_pagination, Text.media_files]  # , Text.created_at, Text.updated_at
+    column_sortable_list = [Text.id, Text.context_marker, Text.is_default_media, Text.is_active]  # , Text.created_at, Text.updated_at
     column_searchable_list = [Text.id, Text.context_marker]
     column_filters = [Text.context_marker, Text.is_default_media, Text.is_active]
     form_columns = ['context_marker', 'body', 'is_default_media', 'is_active', 'reading_pagination', 'media_files']

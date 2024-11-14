@@ -2,6 +2,8 @@ from sqlalchemy import Table, Column, String, Integer, DateTime, func, ForeignKe
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
+from core import logger
+
 metadata_logg = MetaData()
 
 tg_users = Table(
@@ -77,15 +79,40 @@ async def add_missing_columns(engine):
                 if column.name not in existing_column_names:
                     alter_stmt = text(f"ALTER TABLE {table.name} ADD COLUMN {column.name} {column.type}")
                     await conn.execute(alter_stmt)
-                    print(f"Added column {column.name} to table {table.name}")
+                    logger.info(f"Added column {column.name} to table {table.name}")
 
 
 async def check_and_update_tables(engine):
-    async with engine.begin() as conn:
-        inspector = await conn.run_sync(inspect)
-        for table in metadata_logg.sorted_tables:
-            if not await conn.run_sync(lambda sync_conn: inspector.has_table(table.name)):
-                await conn.run_sync(metadata_logg.create_all)
-                print(f"Created table {table.name}")
-            else:
+    # First create tables in a separate transaction
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(metadata_logg.create_all)
+            logger.info("Created all missing tables")
+    except Exception as e:
+        logger.error(f"Error creating tables: {str(e)}")
+        raise
+
+    # Wait a moment to ensure database consistency
+    import asyncio
+    await asyncio.sleep(1)
+    
+    # Then check for missing columns in a new transaction
+    try:
+        async with engine.begin() as conn:
+            inspector = await conn.run_sync(inspect)
+            tables_exist = True
+            
+            # Verify tables exist
+            for table in metadata_logg.sorted_tables:
+                if not await conn.run_sync(lambda sync_conn: inspector.has_table(table.name)):
+                    tables_exist = False
+                    logger.error(f"Table {table.name} was not created successfully")
+                    raise Exception(f"Table {table.name} was not created successfully")
+            
+            if tables_exist:
                 await add_missing_columns(engine)
+                logger.info("Successfully added any missing columns")
+            
+    except Exception as e:
+        logger.error(f"Error checking/updating columns: {str(e)}")
+        raise

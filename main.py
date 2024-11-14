@@ -30,7 +30,9 @@ from core.admin.models import (
     ProviderExchangeRateAdmin,
     TgUserAdmin,
     TgUserLogAdmin,
-    WelcomeMessageAdmin,
+    ButtonAdmin,
+    MediaAdmin,
+    TextAdmin,
 )
 from core.admin import (
     sqladmin_authentication_backend,
@@ -191,7 +193,9 @@ admin.add_view(ProviderExchangeRateAdmin)
 admin.add_view(TransferRuleAdmin)
 admin.add_view(TgUserAdmin)
 admin.add_view(TgUserLogAdmin)
-admin.add_view(WelcomeMessageAdmin)
+admin.add_view(ButtonAdmin)
+admin.add_view(MediaAdmin)
+admin.add_view(TextAdmin)
 
 main_app.include_router(router=api_router, prefix=settings.api_prefix.prefix)
 
@@ -244,10 +248,11 @@ class NoFaviconFilter(logging.Filter):
 
 logging.getLogger("uvicorn.access").addFilter(NoFaviconFilter())
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     uvicorn.run("main:main_app",
-                host=settings.run.host,
-                port=settings.run.port,
-                reload=settings.run.debug,
-                access_log=False,
-                )
+        host=settings.run.host,
+        port=settings.run.port,
+        # reload=settings.run.debug,
+        reload=False,
+    )

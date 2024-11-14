@@ -2,10 +2,10 @@
 
 # Wait until Postgres is ready
 POSTGRES_PORT=5432
-while ! nc -z pg "$POSTGRES_PORT"; do sleep 1; done
+PG_ADDR=$POSTGRES_ADDRESS
 
-## Set the python path
-#export PYTHONPATH=$(pwd)
+while ! nc -z "$PG_ADDR" "$POSTGRES_PORT"; do sleep 1; done
+
 # Run migrations
 alembic upgrade head
 
