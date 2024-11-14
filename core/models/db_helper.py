@@ -21,7 +21,7 @@ class DataBaseHelper:
     async def dispose(self) -> None:
         await self.engine.dispose()
 
-    async def session_getter(self) -> AsyncSession:
+    async def session_getter(self) -> AsyncSession:  # type: ignore
         async with self.session_factory() as session:
             yield session
 

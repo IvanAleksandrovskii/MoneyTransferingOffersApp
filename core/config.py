@@ -44,6 +44,7 @@ OBJECTS_CACHED_MAX_COUNT = int(os.getenv("OBJECTS_CACHED_MAX_COUNT", 20))
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
 
 # TGBot ENV variables
+TGBOT_URL = os.getenv("TGBOT_URL", "https://6011-184-22-9-133.ngrok-free.app")
 TGBOT_TOKEN = os.getenv("TGBOT_TOKEN")
 TGBOT_WELCOME_MESSAGE_CACHED_TIME = int(os.getenv("TGBOT_WELCOME_MESSAGE_CACHED_TIME", 60))
 TGBOT_DEBUG = os.getenv("TGBOT_DEBUG", "False").lower() in ('true', '1')
@@ -90,6 +91,7 @@ class CacheConfig(BaseModel):
 
 class MediaConfig(BaseModel):
     root: str = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'media')
+    bot: str = os.path.join(root, 'bot')
     url: str = '/media/'
 
 
@@ -98,6 +100,7 @@ class CORSAllowedOriginsConfig(BaseModel):
 
 
 class TGBotConfig(BaseModel):
+    url: str = TGBOT_URL
     token: str = TGBOT_TOKEN
     welcome_message_cached_time: int = TGBOT_WELCOME_MESSAGE_CACHED_TIME
     debug: bool = TGBOT_DEBUG

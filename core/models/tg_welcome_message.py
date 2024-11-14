@@ -3,7 +3,7 @@ from sqlalchemy import Table, Column, String, MetaData, inspect, Integer, select
 from sqlalchemy.ext.declarative import declarative_base
 
 from core import settings
-from bot.bot_logger import logger
+from core import logger
 
 metadata_welcome_message = MetaData()
 

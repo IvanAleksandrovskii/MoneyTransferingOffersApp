@@ -17,5 +17,4 @@ ENV/
 # macOS files
 .DS_Store
 
-**/unused/
-**/tests/
+**/__unused__/
