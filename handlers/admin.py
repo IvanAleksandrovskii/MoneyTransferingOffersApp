@@ -54,12 +54,10 @@ async def process_done_command(message: types.Message, state: FSMContext):
 
         for msg_data in messages:
             msg = msg_data['message']
-            entities = msg_data['entities']
 
             if msg.content_type in [ContentType.PHOTO, ContentType.VIDEO]:
                 media = types.InputMediaPhoto(media=msg.photo[-1].file_id) if msg.content_type == ContentType.PHOTO else types.InputMediaVideo(media=msg.video.file_id)
                 media.caption = msg.caption
-                media.caption_entities = entities
                 grouped_media.append(media)
 
                 if len(grouped_media) == 10:
@@ -67,11 +65,11 @@ async def process_done_command(message: types.Message, state: FSMContext):
                     grouped_media = []
 
             elif msg.content_type == ContentType.DOCUMENT:
-                grouped_documents.append((msg.document.file_id, msg.caption, entities))
+                grouped_documents.append((msg.document.file_id, msg.caption))
 
                 if len(grouped_documents) == 10:
                     for doc in grouped_documents:
-                        await message.answer_document(doc[0], caption=doc[1], caption_entities=doc[2])
+                        await message.answer_document(doc[0], caption=doc[1], parse_mode='HTML')
                     grouped_documents = []
 
             else:
@@ -81,18 +79,18 @@ async def process_done_command(message: types.Message, state: FSMContext):
                     grouped_media = []
                 if grouped_documents:
                     for doc in grouped_documents:
-                        await message.answer_document(doc[0], caption=doc[1], caption_entities=doc[2])
+                        await message.answer_document(doc[0], caption=doc[1], parse_mode='HTML')
                     grouped_documents = []
 
                 # Send other types of content
                 if msg.content_type == ContentType.TEXT:
-                    await message.answer(msg.text, entities=entities)
+                    await message.answer(msg.text, parse_mode='HTML')
                 elif msg.content_type == ContentType.AUDIO:
-                    await message.answer_audio(msg.audio.file_id, caption=msg.caption, caption_entities=entities)
+                    await message.answer_audio(msg.audio.file_id, caption=msg.caption, parse_mode='HTML')
                 elif msg.content_type == ContentType.ANIMATION:
-                    await message.answer_animation(msg.animation.file_id, caption=msg.caption, caption_entities=entities)
+                    await message.answer_animation(msg.animation.file_id, caption=msg.caption, parse_mode='HTML')
                 elif msg.content_type == ContentType.VOICE:
-                    await message.answer_voice(msg.voice.file_id, caption=msg.caption, caption_entities=entities)
+                    await message.answer_voice(msg.voice.file_id, caption=msg.caption, parse_mode='HTML')
                 elif msg.content_type == ContentType.VIDEO_NOTE:
                     await message.answer_video_note(msg.video_note.file_id)
                 elif msg.content_type == ContentType.STICKER:
@@ -111,7 +109,7 @@ async def process_done_command(message: types.Message, state: FSMContext):
             await message.bot.send_media_group(message.chat.id, grouped_media)
         if grouped_documents:
             for doc in grouped_documents:
-                await message.answer_document(doc[0], caption=doc[1], caption_entities=doc[2])
+                await message.answer_document(doc[0], caption=doc[1], parse_mode='HTML')
 
         await state.set_state(AdminBroadcastStates.WAITING_FOR_CONFIRMATION)
         await message.answer(
@@ -130,7 +128,6 @@ async def process_broadcast_message(message: types.Message, state: FSMContext):
 
         messages.append({
             'message': message,
-            'entities': message.entities or message.caption_entities
         })
 
         await state.update_data(messages=messages)
@@ -164,12 +161,10 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
 
                 for msg_data in broadcast_messages:
                     msg = msg_data['message']
-                    entities = msg_data['entities']
 
                     if msg.content_type in [ContentType.PHOTO, ContentType.VIDEO]:
                         media = types.InputMediaPhoto(media=msg.photo[-1].file_id) if msg.content_type == ContentType.PHOTO else types.InputMediaVideo(media=msg.video.file_id)
                         media.caption = msg.caption
-                        media.caption_entities = entities
                         grouped_media.append(media)
 
                         if len(grouped_media) == 10:
@@ -177,11 +172,11 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
                             grouped_media = []
 
                     elif msg.content_type == ContentType.DOCUMENT:
-                        grouped_documents.append((msg.document.file_id, msg.caption, entities))
+                        grouped_documents.append((msg.document.file_id, msg.caption))
 
                         if len(grouped_documents) == 10:
                             for doc in grouped_documents:
-                                await message.bot.send_document(int(user.tg_user), doc[0], caption=doc[1], caption_entities=doc[2])
+                                await message.bot.send_document(int(user.tg_user), doc[0], caption=doc[1], parse_mode='HTML')
                             grouped_documents = []
 
                     else:
@@ -191,18 +186,18 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
                             grouped_media = []
                         if grouped_documents:
                             for doc in grouped_documents:
-                                await message.bot.send_document(int(user.tg_user), doc[0], caption=doc[1], caption_entities=doc[2])
+                                await message.bot.send_document(int(user.tg_user), doc[0], caption=doc[1], parse_mode='HTML')
                             grouped_documents = []
 
                         # Send other types of content
                         if msg.content_type == ContentType.TEXT:
-                            await message.bot.send_message(int(user.tg_user), msg.text, entities=entities)
+                            await message.bot.send_message(int(user.tg_user), msg.text, parse_mode='HTML')
                         elif msg.content_type == ContentType.AUDIO:
-                            await message.bot.send_audio(int(user.tg_user), msg.audio.file_id, caption=msg.caption, caption_entities=entities)
+                            await message.bot.send_audio(int(user.tg_user), msg.audio.file_id, caption=msg.caption, parse_mode='HTML')
                         elif msg.content_type == ContentType.ANIMATION:
-                            await message.bot.send_animation(int(user.tg_user), msg.animation.file_id, caption=msg.caption, caption_entities=entities)
+                            await message.bot.send_animation(int(user.tg_user), msg.animation.file_id, caption=msg.caption, parse_mode='HTML')
                         elif msg.content_type == ContentType.VOICE:
-                            await message.bot.send_voice(int(user.tg_user), msg.voice.file_id, caption=msg.caption, caption_entities=entities)
+                            await message.bot.send_voice(int(user.tg_user), msg.voice.file_id, caption=msg.caption, parse_mode='HTML')
                         elif msg.content_type == ContentType.VIDEO_NOTE:
                             await message.bot.send_video_note(int(user.tg_user), msg.video_note.file_id)
                         elif msg.content_type == ContentType.STICKER:
@@ -221,7 +216,7 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
                     await message.bot.send_media_group(int(user.tg_user), grouped_media)
                 if grouped_documents:
                     for doc in grouped_documents:
-                        await message.bot.send_document(int(user.tg_user), doc[0], caption=doc[1], caption_entities=doc[2])
+                        await message.bot.send_document(int(user.tg_user), doc[0], caption=doc[1], parse_mode='HTML')
 
                 users_counter += 1
 
@@ -235,7 +230,7 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
 
         if failed_users:
             await message.answer(
-                settings.bot_text.admin_not_all_broadcast_1 + f" {users_counter} " + settings.bot_admin_text.not_all_broadcast_2 + f" {len(failed_users)} " + settings.bot_text.admin_not_all_broadcast_3)
+                settings.bot_admin_text.not_all_broadcast_1 + f" {users_counter} " + settings.bot_admin_text.not_all_broadcast_2 + f" {len(failed_users)} " + settings.bot_text.admin_not_all_broadcast_3)
         else:
             await message.answer(settings.bot_admin_text.full_success_broadcast + f"{users_counter}")
 
