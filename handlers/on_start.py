@@ -77,7 +77,7 @@ async def start_command(message: types.Message, bot: Bot, state: FSMContext):
 @router.callback_query(lambda c: c.data == "back_to_start")
 async def back_to_start(callback_query: types.CallbackQuery, state: FSMContext):
     
-    await callback_query.answer("Back to start")  # TODO: Move to config
+    await callback_query.answer(settings.bot_main_page_text.callback_response_back_to_start)
     
     await state.clear()
     chat_id = str(callback_query.from_user.id)

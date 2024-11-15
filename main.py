@@ -145,7 +145,7 @@ async def handle_webhook(request: Request):
 # Fixing CORS
 main_app.add_middleware(
     CORSMiddleware,  # type: ignore
-    allow_origins=settings.cors.allowed_origins,  # TODO: Cause of webhooks should be all origins allowed
+    allow_origins=settings.cors.allowed_origins,  # Cause of webhooks should be all origins allowed
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

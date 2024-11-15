@@ -8,6 +8,7 @@ from fastapi_storages import FileSystemStorage
 from core import settings
 
 
+# TODO: ADD old media deletion on media change
 class CustomFileSystemStorage(FileSystemStorage):
     def __init__(self, root_path: str):
         self.root_path = root_path

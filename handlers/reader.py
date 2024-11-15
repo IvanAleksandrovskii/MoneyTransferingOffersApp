@@ -160,9 +160,9 @@ async def process_page_input(message: types.Message, state: FSMContext):
                 media_url
             )
         else:
-            await message.answer("Page number is out of range.")  # TODO: Move to config
+            await message.answer(settings.bot_reader_text.page_number_out_of_range)  
     except ValueError:
-        await message.answer("Invalid page number. Should be a number in range of pages count.")  # TODO: Move to config
+        await message.answer(settings.bot_reader_text.invalid_page_number)  
         pass
 
 

@@ -147,10 +147,10 @@ class BotAdminTexts(BaseModel):
 
 
 class BotMainPageTexts(BaseModel):
-    user_error_message: str = "Something went wrong. Please try again later."
+    user_error_message: str = "Что-то пошло не так. Попробуйте позже."
+    utils_error_message: str = "Что-то пошло не так. Попробуйте позже."
     welcome_fallback_user_word: str = "пользователь"
-    utils_error_message: str = "Something went wrong. Please try again later."
-
+    callback_response_back_to_start: str = "Главное меню"
 
 
 class UniversalPageTexts(BaseModel):
@@ -167,6 +167,8 @@ class BotReaderTexts(BaseModel):
     reader_action_unkown: str = "Неизвестное действие"
     reader_page_load_error: str = "Произошла ошибка при загрузке страницы. Попробуйте еще раз."
     reader_page_number_button_ansewer: str = "Номер страницы, введите в чат"
+    page_number_out_of_range: str = "Номер страницы выходит за пределы доступных страниц"
+    invalid_page_number: str = "Неверный номер страницы. Должен быть целым числом в диапазоне от 1 до количества страниц"
 
 
 class Settings(BaseSettings):
