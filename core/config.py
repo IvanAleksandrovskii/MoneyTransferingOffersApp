@@ -153,6 +153,22 @@ class BotMainPageTexts(BaseModel):
 
 
 
+class UniversalPageTexts(BaseModel):
+    universal_page_error: str = "An error occurred while loading the page. Please try again."
+    universal_page_try_again: str = "An error occurred. Please try starting over."
+
+
+class BotReaderTexts(BaseModel):
+    reader_chunks: int = 500
+    reader_command_error: str = "Пожалуйста, укажите идентификатор текста после команды /read"
+    reader_text_not_found: str = "Извините, текст не найден: "
+    reader_end_reading_to_main: str = "Главное меню"
+    reader_custom_action_processing_error: str = "Произошла ошибка при обработке действия. Попробуйте еще раз."
+    reader_action_unkown: str = "Неизвестное действие"
+    reader_page_load_error: str = "Произошла ошибка при загрузке страницы. Попробуйте еще раз."
+    reader_page_number_button_ansewer: str = "Номер страницы, введите в чат"
+
+
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     api_prefix: APIPrefixConfig = APIPrefixConfig()
@@ -165,6 +181,8 @@ class Settings(BaseSettings):
     bot_admin_text: BotAdminTexts = BotAdminTexts()
     webhook: WebhookConfig = WebhookConfig()
     bot_main_page_text: BotMainPageTexts = BotMainPageTexts()
+    bot_reader_text: BotReaderTexts = BotReaderTexts()
+    universal_page_text: UniversalPageTexts = UniversalPageTexts()
 
 
 settings = Settings()
