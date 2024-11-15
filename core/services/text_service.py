@@ -1,5 +1,7 @@
 # services/text_service.py
 
+import random
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
@@ -32,6 +34,10 @@ class TextService:
                 else:
                     full_url = f"{settings.bot.url}{media.file}"
                 media_urls.append(full_url)
+                
+        if len(media_urls) > 1:
+            random.shuffle(media_urls)
+            
         return media_urls
 
     @staticmethod

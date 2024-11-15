@@ -70,6 +70,7 @@ class ProviderExchangeRateAdmin(BaseAdminModel, model=ProviderExchangeRate):
 
     name = "Provider Exchange Rate"
     category = "Providers"
+    icon = "fa-solid fa-chart-line"
 
     def search_query(self, stmt, term):
         return stmt.filter(

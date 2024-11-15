@@ -30,6 +30,7 @@ class DocumentAdmin(BaseAdminModel, model=Document):
     name = "Document"
     name_plural = "Documents"
     category = "Global"
+    icon = "fa-solid fa-file-lines"
 
     def search_query(self, stmt, term):
         return stmt.filter(Document.name.ilike(f"%{term}%"))

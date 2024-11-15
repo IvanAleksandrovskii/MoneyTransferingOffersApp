@@ -40,6 +40,7 @@ class CountryAdmin(BaseAdminModel, model=Country):
     name = "Country"
     name_plural = "Countries"
     category = "Global"
+    icon = "fa-solid fa-globe"
 
     def search_query(self, stmt, term):
         return stmt.outerjoin(Currency, Country.local_currency).filter(

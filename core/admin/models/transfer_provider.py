@@ -37,6 +37,7 @@ class TransferProviderAdmin(BaseAdminModel, model=TransferProvider):
         },
     }
     category = "Providers"
+    icon = "fa-solid fa-building-columns"
 
     def search_query(self, stmt, term):
         logger.debug(f"Searching for term: {term}")

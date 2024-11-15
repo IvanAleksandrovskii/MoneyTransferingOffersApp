@@ -259,7 +259,7 @@ async def process_custom_action(
     action: str,
     context_marker: str,
     state: FSMContext
-):  # TODO: Add other actions too
+):
     async for session in db_helper.session_getter():
         try:
             button_service = ButtonService()

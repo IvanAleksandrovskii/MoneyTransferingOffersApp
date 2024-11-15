@@ -44,6 +44,7 @@ class CurrencyAdmin(BaseAdminModel, model=Currency):
     name = "Currency"
     name_plural = "Currencies"
     category = "Global"
+    icon = "fa-solid fa-money-bill"
 
     def search_query(self, stmt, term):
         return stmt.filter(

@@ -14,6 +14,7 @@ class TgUserAdmin(ModelView, model=TgUser):
     name = "Telegram User"
     name_plural = "Telegram Users"
     category = "Telegram"
+    icon = "fas fa-user-alt"
 
 
 class TgUserLogAdmin(ModelView, model=TgUserLog):
@@ -32,3 +33,4 @@ class TgUserLogAdmin(ModelView, model=TgUserLog):
     name = "Telegram User Log"
     name_plural = "Telegram User Logs"
     category = "Telegram"
+    icon = "fa-solid fa-history"

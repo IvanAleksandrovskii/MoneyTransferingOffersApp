@@ -17,7 +17,8 @@ class TransferRuleAdmin(BaseAdminModel, model=TransferRule):
     """
     Admin interface for managing TransferRule objects.
     """
-
+    icon = "fa-solid fa-exchange"
+    
     def __init__(self, *args, **kwargs):
         super().__init__()
 
