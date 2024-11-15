@@ -44,8 +44,10 @@ services:
       - OBJECTS_CACHE_SEC=${OBJECTS_CACHE_SEC:-60}
       - OBJECTS_CACHED_MAX_COUNT=${OBJECTS_CACHED_MAX_COUNT:-25}
 
-      # - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["http://sendmoneyto.ru", "https://sendmoneyto.ru", "http://0.0.0.0:5173"]}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["*"]}
+      # - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["https://sendmoneyto.ru"]}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["*"]}  # Because of telegram requests should be allowed all or need to add filter for telegram server's adderesses
+      - BOT_URL=${BOT_URL:-https://f1b0-184-22-9-133.ngrok-free.app}  # NEW FIELD (( ! ))
+
     volumes:
       - app_data:/app/media  # Added volume for media only
     command: /app/start.sh
