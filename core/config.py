@@ -44,7 +44,7 @@ OBJECTS_CACHED_MAX_COUNT = int(os.getenv("OBJECTS_CACHED_MAX_COUNT", 20))
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
 
 # TGBot ENV variables
-TGBOT_URL = os.getenv("TGBOT_URL", "https://fed5-184-22-9-133.ngrok-free.app")
+TGBOT_URL = os.getenv("TGBOT_URL", "https://f1b0-184-22-9-133.ngrok-free.app")
 TGBOT_TOKEN = os.getenv("BOT_TOKEN")
 TGBOT_WELCOME_MESSAGE_CACHED_TIME = int(os.getenv("TGBOT_WELCOME_MESSAGE_CACHED_TIME", 60))
 TGBOT_DEBUG = os.getenv("TGBOT_DEBUG", "False").lower() in ('true', '1')
@@ -147,6 +147,12 @@ class BotAdminTexts(BaseModel):
     confirming_words: list[str] = ["да", "yes", "конечно", "отправить", "send", "accept", "absolutely", "lf"]
 
 
+class BotMainPageTexts(BaseModel):
+    user_error_message: str = "Something went wrong. Please try again later."
+    welcome_fallback_user_word: str = "пользователь"
+    utils_error_message: str = "Something went wrong. Please try again later."
+
+
 
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
@@ -159,6 +165,7 @@ class Settings(BaseSettings):
     bot: TGBotConfig = TGBotConfig()
     bot_admin_text: BotAdminTexts = BotAdminTexts()
     webhook: WebhookConfig = WebhookConfig()
+    bot_main_page_text: BotMainPageTexts = BotMainPageTexts()
 
 
 settings = Settings()

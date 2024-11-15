@@ -38,34 +38,8 @@ from core.admin import (
     sqladmin_authentication_backend,
     async_sqladmin_db_helper,
 )
-# from core.models.tg_welcome_message import check_table
 from handlers import router as main_router
 
-
-
-# @asynccontextmanager
-# async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-#     # Startup
-#     logger.info("Starting up the FastAPI application...")
-
-#     # TG logging tables creation
-#     engine = db_helper.engine
-
-#     try:
-#         logger.info("Checking if logging tables exist...")
-#         await check_and_update_tables(engine)
-
-#         # Welcome message for TG bot
-#         await check_table(engine)
-#     except Exception as e:
-#         logger.exception(f"Error in lifespan on table hand writen creation/update (no auto migration tables with ): {e}")
-
-#     yield
-
-#     # Shutdown
-#     logger.info("Shutting down the FastAPI application...")
-#     await db_helper.dispose()
-#     await async_sqladmin_db_helper.dispose()  # Admin db engine dispose
 
 class BotWebhookManager:
     def __init__(self):
@@ -196,7 +170,7 @@ main_app.include_router(router=api_router, prefix=settings.api_prefix.prefix)
 
 main_app.mount("/media", StaticFiles(directory=settings.media.root), name="media")
 
-main_app.mount("/app/media/", StaticFiles(directory=settings.media.bot), name="bot_media")
+main_app.mount("/media/bot/", StaticFiles(directory=settings.media.bot), name="bot_media")
 
 
 # Favicon.ico errors silenced
@@ -249,5 +223,5 @@ if __name__ == '__main__':
         host=settings.run.host,
         port=settings.run.port,
         # reload=settings.run.debug,
-        reload=False,
+        reload=False,  # Something wrong with reloading, so just disable it completely for now
     )

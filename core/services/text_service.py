@@ -4,10 +4,9 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
 
-from core import logger as log
+from core import settings, logger as log
 from core.models.text import Text
 from core.models.media import Media
-from core.config import settings
 
 
 class TextService:
@@ -28,7 +27,10 @@ class TextService:
         await session.refresh(text, ['media_files'])
         for media in text.media_files:
             if media.is_active:
-                full_url = f"{settings.bot.url}/app/{media.file}"
+                if media.file.startswith("/app"):
+                    full_url = f"{settings.bot.url}{media.file[4:]}"
+                else:
+                    full_url = f"{settings.bot.url}{media.file}"
                 media_urls.append(full_url)
         return media_urls
 
@@ -60,7 +62,7 @@ class TextService:
             )
             default_media = result.scalar_one_or_none()
             if default_media:
-                return f"{settings.bot.url}/app/{default_media.file}"
+                return f"{settings.bot.url}{default_media.file}"
             return None
         except Exception as e:
             log.exception(f"Error in get_default_media: {e}")

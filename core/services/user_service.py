@@ -1,3 +1,5 @@
+# core/services/user_service.py
+
 from sqlalchemy import select
 
 from core import logger
