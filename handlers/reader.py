@@ -55,9 +55,11 @@ def split_text_into_chunks(text: str, max_chunk_size: int) -> list[str]:
     return chunks
 
 
-@router.message(Command("read"))
 @router.callback_query(lambda c: c.data and c.data.startswith("read_"))
 async def start_reading(message: types.Message | types.CallbackQuery, state: FSMContext):
+    
+    await message.answer()
+    
     if isinstance(message, types.Message):
         context_marker = message.text.split(maxsplit=1)[1] if len(message.text.split()) > 1 else None
     else:

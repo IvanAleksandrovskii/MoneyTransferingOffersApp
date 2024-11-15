@@ -18,6 +18,8 @@ class UniversalPageStates(StatesGroup):
 
 @router.callback_query(lambda c: c.data and c.data.startswith("show_page_"))
 async def show_universal_page(callback_query: types.CallbackQuery, state: FSMContext):
+    
+    await callback_query.answer()
 
     await state.clear()  # Clear the state before showing a new page
     
