@@ -15,3 +15,6 @@ router.include_router(admin_router)
 
 from .reader import router as reader_router
 router.include_router(reader_router)
+
+from .direct_broadcast import router as direct_broadcast_router
+router.include_router(direct_broadcast_router)

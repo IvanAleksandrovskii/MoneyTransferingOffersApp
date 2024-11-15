@@ -24,7 +24,7 @@ async def get_start_content(chat_id: str, username: str | None):
             user = await user_service.get_user(chat_id)
             if not user:
                 user = await user_service.create_user(tg_user=chat_id, username=username)
-                log.info("Created new user: %s, username: %s", user.chat_id, user.username)
+                log.info("Created new user: %s, username: %s", user.tg_user, user.username)
             elif user.username != username:
                 updated = await user_service.update_username(tg_user=chat_id, new_username=username)
                 if updated:
