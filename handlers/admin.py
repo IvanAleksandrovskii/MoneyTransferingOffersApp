@@ -23,7 +23,7 @@ class AdminBroadcastStates(StatesGroup):
 @router.message(Command("broadcast"))
 async def start_broadcast(message: types.Message, state: FSMContext):
     try:
-        if not await UserService.is_superuser(int(message.from_user.id)):
+        if not await UserService.is_superuser(str(message.from_user.id)):
             await message.answer(settings.bot_admin_text.no_admin_rules)
             return
 
@@ -173,7 +173,7 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
                         grouped_media.append(media)
 
                         if len(grouped_media) == 10:
-                            await message.bot.send_media_group(int(user.chat_id), grouped_media)
+                            await message.bot.send_media_group(int(user.tg_user), grouped_media)
                             grouped_media = []
 
                     elif msg.content_type == ContentType.DOCUMENT:
@@ -181,47 +181,47 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
 
                         if len(grouped_documents) == 10:
                             for doc in grouped_documents:
-                                await message.bot.send_document(int(user.chat_id), doc[0], caption=doc[1], caption_entities=doc[2])
+                                await message.bot.send_document(int(user.tg_user), doc[0], caption=doc[1], caption_entities=doc[2])
                             grouped_documents = []
 
                     else:
                         # Send any remaining grouped media or documents
                         if grouped_media:
-                            await message.bot.send_media_group(int(user.chat_id), grouped_media)
+                            await message.bot.send_media_group(int(user.tg_user), grouped_media)
                             grouped_media = []
                         if grouped_documents:
                             for doc in grouped_documents:
-                                await message.bot.send_document(int(user.chat_id), doc[0], caption=doc[1], caption_entities=doc[2])
+                                await message.bot.send_document(int(user.tg_user), doc[0], caption=doc[1], caption_entities=doc[2])
                             grouped_documents = []
 
                         # Send other types of content
                         if msg.content_type == ContentType.TEXT:
-                            await message.bot.send_message(int(user.chat_id), msg.text, entities=entities)
+                            await message.bot.send_message(int(user.tg_user), msg.text, entities=entities)
                         elif msg.content_type == ContentType.AUDIO:
-                            await message.bot.send_audio(int(user.chat_id), msg.audio.file_id, caption=msg.caption, caption_entities=entities)
+                            await message.bot.send_audio(int(user.tg_user), msg.audio.file_id, caption=msg.caption, caption_entities=entities)
                         elif msg.content_type == ContentType.ANIMATION:
-                            await message.bot.send_animation(int(user.chat_id), msg.animation.file_id, caption=msg.caption, caption_entities=entities)
+                            await message.bot.send_animation(int(user.tg_user), msg.animation.file_id, caption=msg.caption, caption_entities=entities)
                         elif msg.content_type == ContentType.VOICE:
-                            await message.bot.send_voice(int(user.chat_id), msg.voice.file_id, caption=msg.caption, caption_entities=entities)
+                            await message.bot.send_voice(int(user.tg_user), msg.voice.file_id, caption=msg.caption, caption_entities=entities)
                         elif msg.content_type == ContentType.VIDEO_NOTE:
-                            await message.bot.send_video_note(int(user.chat_id), msg.video_note.file_id)
+                            await message.bot.send_video_note(int(user.tg_user), msg.video_note.file_id)
                         elif msg.content_type == ContentType.STICKER:
-                            await message.bot.send_sticker(int(user.chat_id), msg.sticker.file_id)
+                            await message.bot.send_sticker(int(user.tg_user), msg.sticker.file_id)
                         elif msg.content_type == ContentType.LOCATION:
-                            await message.bot.send_location(int(user.chat_id), msg.location.latitude, msg.location.longitude)
+                            await message.bot.send_location(int(user.tg_user), msg.location.latitude, msg.location.longitude)
                         elif msg.content_type == ContentType.VENUE:
-                            await message.bot.send_venue(int(user.chat_id), msg.venue.location.latitude, msg.venue.location.longitude, msg.venue.title, msg.venue.address)
+                            await message.bot.send_venue(int(user.tg_user), msg.venue.location.latitude, msg.venue.location.longitude, msg.venue.title, msg.venue.address)
                         elif msg.content_type == ContentType.CONTACT:
-                            await message.bot.send_contact(int(user.chat_id), msg.contact.phone_number, msg.contact.first_name, msg.contact.last_name)
+                            await message.bot.send_contact(int(user.tg_user), msg.contact.phone_number, msg.contact.first_name, msg.contact.last_name)
                         else:
-                            await message.bot.send_message(int(user.chat_id), settings.bot_admin_text.unsupported_file_type + f" {msg.content_type}.")
+                            await message.bot.send_message(int(user.tg_user), settings.bot_admin_text.unsupported_file_type + f" {msg.content_type}.")
 
                 # Send any remaining grouped media or documents
                 if grouped_media:
-                    await message.bot.send_media_group(int(user.chat_id), grouped_media)
+                    await message.bot.send_media_group(int(user.tg_user), grouped_media)
                 if grouped_documents:
                     for doc in grouped_documents:
-                        await message.bot.send_document(int(user.chat_id), doc[0], caption=doc[1], caption_entities=doc[2])
+                        await message.bot.send_document(int(user.tg_user), doc[0], caption=doc[1], caption_entities=doc[2])
 
                 users_counter += 1
 
@@ -229,8 +229,8 @@ async def confirm_broadcast(message: types.Message, state: FSMContext):
                 await asyncio.sleep(0.05)
 
             except Exception as e:
-                log.info(f"Failed to send broadcast to user {user.chat_id}: {str(e)}")
-                failed_users.append(user.chat_id)
+                log.info(f"Failed to send broadcast to user {user.tg_user}: {str(e)}")
+                failed_users.append(user.tg_user)
                 continue
 
         if failed_users:
