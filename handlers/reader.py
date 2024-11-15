@@ -110,6 +110,9 @@ async def start_reading(message: types.Message | types.CallbackQuery, state: FSM
 
 @router.callback_query(LargeTextStates.READING)
 async def process_reading(callback_query: types.CallbackQuery, state: FSMContext):
+    
+    await callback_query.answer()
+    
     data = await state.get_data()
     chunks = data.get("chunks", [])
     current_chunk = data.get("current_chunk", 0)
