@@ -224,4 +224,6 @@ if __name__ == '__main__':
         port=settings.run.port,
         # reload=settings.run.debug,
         reload=False,  # Something wrong with reloading, so just disable it completely for now
+        forwarded_allow_ips='*',  # Added this for nginx fix
+        proxy_headers=True 
     )
