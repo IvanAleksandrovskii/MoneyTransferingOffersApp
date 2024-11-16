@@ -111,6 +111,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as e:
         logger.exception(f"Error in lifespan on table hand writen creation/update (no auto migration tables with ): {e}")
     
+    
+    logger.info("(( ! )) Starting bot with: token: %s, webhook_host: %s", settings.bot.token, settings.bot.url)
+    
     await bot_manager.setup(
         token=settings.bot.token,
         webhook_host=settings.bot.url,
