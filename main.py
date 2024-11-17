@@ -171,6 +171,15 @@ admin.add_view(TextAdmin)
 
 main_app.include_router(router=api_router, prefix=settings.api_prefix.prefix)
 
+# TODO: This is fix for sqladmin with https
+@main_app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = "upgrade-insecure-requests"
+    return response
+
+
 main_app.mount("/media", StaticFiles(directory=settings.media.root), name="media")
 
 main_app.mount("/media/bot/", StaticFiles(directory=settings.media.bot), name="bot_media")
