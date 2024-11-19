@@ -44,7 +44,7 @@ OBJECTS_CACHED_MAX_COUNT = int(os.getenv("OBJECTS_CACHED_MAX_COUNT", 20))
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
 
 # TGBot ENV variables
-BOT_URL = os.getenv("BOT_URL", "https://f1b0-184-22-9-133.ngrok-free.app")
+BOT_URL = os.getenv("BOT_URL", "https://955f-49-228-98-24.ngrok-free.app")
 TGBOT_TOKEN = os.getenv("BOT_TOKEN")
 TGBOT_WELCOME_MESSAGE_CACHED_TIME = int(os.getenv("TGBOT_WELCOME_MESSAGE_CACHED_TIME", 60))
 TGBOT_DEBUG = os.getenv("TGBOT_DEBUG", "False").lower() in ('true', '1')
