@@ -68,7 +68,6 @@ class TextService:
             )
             default_media = result.scalar_one_or_none()
             if default_media:
-                # return f"{settings.bot.url}{default_media.file}"
                 if default_media.file.startswith("/app"):
                     return f"{settings.bot.url}{default_media.file[4:]}"
                 else:
