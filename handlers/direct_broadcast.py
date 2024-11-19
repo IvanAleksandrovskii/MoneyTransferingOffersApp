@@ -1,5 +1,3 @@
-# handlers/direct_broadcast.py
-
 import asyncio
 
 from aiogram import types, Router, F
@@ -20,7 +18,9 @@ class AdminBroadcastStates(StatesGroup):
     WAITING_FOR_CHAT_IDS = State()
     WAITING_FOR_CONFIRMATION = State()
     DIRECT_WAITING_FOR_MESSAGE = State()
+    DIRECT_WAITING_FOR_PREVIEW = State()
     DIRECT_WAITING_FOR_IDS = State()
+    DIRECT_WAITING_FOR_CONFIRMATION = State()
 
 
 # Функция для создания клавиатуры с кнопкой отмены
@@ -69,16 +69,94 @@ async def process_direct_messages_done(message: types.Message, state: FSMContext
             await message.answer("Вы не отправили ни одного сообщения для рассылки.")
             return
 
-        await state.set_state(AdminBroadcastStates.DIRECT_WAITING_FOR_IDS)
+        await message.answer("Предпросмотр сообщений для рассылки:")
+
+        grouped_media = []
+        grouped_documents = []
+
+        for msg_data in messages:
+            msg = msg_data['message']
+
+            if msg.content_type in [ContentType.PHOTO, ContentType.VIDEO]:
+                media = types.InputMediaPhoto(media=msg.photo[-1].file_id) if msg.content_type == ContentType.PHOTO else types.InputMediaVideo(media=msg.video.file_id)
+                media.caption = msg.caption
+                grouped_media.append(media)
+
+                if len(grouped_media) == 10:
+                    await message.bot.send_media_group(message.chat.id, grouped_media)
+                    grouped_media = []
+
+            elif msg.content_type == ContentType.DOCUMENT:
+                grouped_documents.append((msg.document.file_id, msg.caption))
+
+                if len(grouped_documents) == 10:
+                    for doc in grouped_documents:
+                        await message.answer_document(doc[0], caption=doc[1], parse_mode='HTML')
+                    grouped_documents = []
+
+            else:
+                if grouped_media:
+                    await message.bot.send_media_group(message.chat.id, grouped_media)
+                    grouped_media = []
+                if grouped_documents:
+                    for doc in grouped_documents:
+                        await message.answer_document(doc[0], caption=doc[1], parse_mode='HTML')
+                    grouped_documents = []
+
+                if msg.content_type == ContentType.TEXT:
+                    await message.answer(msg.text, parse_mode='HTML')
+                elif msg.content_type == ContentType.AUDIO:
+                    await message.answer_audio(msg.audio.file_id, caption=msg.caption, parse_mode='HTML')
+                elif msg.content_type == ContentType.ANIMATION:
+                    await message.answer_animation(msg.animation.file_id, caption=msg.caption, parse_mode='HTML')
+                elif msg.content_type == ContentType.VOICE:
+                    await message.answer_voice(msg.voice.file_id, caption=msg.caption, parse_mode='HTML')
+                elif msg.content_type == ContentType.VIDEO_NOTE:
+                    await message.answer_video_note(msg.video_note.file_id)
+                elif msg.content_type == ContentType.STICKER:
+                    await message.answer_sticker(msg.sticker.file_id)
+                elif msg.content_type == ContentType.LOCATION:
+                    await message.answer_location(msg.location.latitude, msg.location.longitude)
+                elif msg.content_type == ContentType.VENUE:
+                    await message.answer_venue(msg.venue.location.latitude, msg.venue.location.longitude, msg.venue.title, msg.venue.address)
+                elif msg.content_type == ContentType.CONTACT:
+                    await message.answer_contact(msg.contact.phone_number, msg.contact.first_name, msg.contact.last_name)
+                else:
+                    await message.answer(settings.bot_admin_text.unsupported_file_type + f" {msg.content_type}.")
+
+        if grouped_media:
+            await message.bot.send_media_group(message.chat.id, grouped_media)
+        if grouped_documents:
+            for doc in grouped_documents:
+                await message.answer_document(doc[0], caption=doc[1], parse_mode='HTML')
+
+        await state.set_state(AdminBroadcastStates.DIRECT_WAITING_FOR_PREVIEW)
         await message.answer(
-            "Теперь отправьте список ID чатов через запятую.\n"
-            "Пример: 123456789, 987654321, 456789123",
+            f"Всего сообщений для рассылки: {len(messages)}\n"
+            "Проверьте правильность сообщений.\n"
+            "Отправьте /continue для продолжения или /cancel для отмены.",
             reply_markup=get_cancel_keyboard()
         )
 
     except Exception as e:
         log.error(f"Error in process_direct_messages_done: {e}")
         await message.answer(settings.bot_admin_text.error_message)
+
+
+@router.message(Command("continue"), AdminBroadcastStates.DIRECT_WAITING_FOR_PREVIEW)
+async def continue_after_preview(message: types.Message, state: FSMContext):
+    await state.set_state(AdminBroadcastStates.DIRECT_WAITING_FOR_IDS)
+    await message.answer(
+        "Теперь отправьте список ID чатов через запятую.\n"
+        "Пример: 123456789, 987654321, 456789123",
+        reply_markup=get_cancel_keyboard()
+    )
+
+
+@router.message(Command("cancel"), AdminBroadcastStates.DIRECT_WAITING_FOR_PREVIEW)
+async def cancel_after_preview(message: types.Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Рассылка отменена.")
 
 
 @router.message(AdminBroadcastStates.DIRECT_WAITING_FOR_MESSAGE)
@@ -104,12 +182,10 @@ async def process_direct_broadcast_message(message: types.Message, state: FSMCon
 @router.message(AdminBroadcastStates.DIRECT_WAITING_FOR_IDS)
 async def process_direct_chat_ids(message: types.Message, state: FSMContext):
     try:
-        # Разбираем список ID
         chat_ids_raw = message.text.replace(" ", "").split(",")
         chat_ids = []
         invalid_ids = []
 
-        # Проверяем каждый ID
         for id_str in chat_ids_raw:
             try:
                 chat_id = int(id_str)
@@ -132,11 +208,34 @@ async def process_direct_chat_ids(message: types.Message, state: FSMContext):
             )
             return
 
-        # Получаем сообщения для рассылки
-        data = await state.get_data()
-        broadcast_messages = data.get('messages', [])
+        await state.update_data(chat_ids=chat_ids)
+        await state.set_state(AdminBroadcastStates.DIRECT_WAITING_FOR_CONFIRMATION)
+        
+        await message.answer(
+            f"Подтвердите отправку рассылки:\n"
+            f"Количество сообщений: {len((await state.get_data())['messages'])}\n"
+            f"Количество получателей: {len(chat_ids)}\n\n"
+            f"Отправьте 'да' для подтверждения или любой другой текст для отмены.",
+            reply_markup=get_cancel_keyboard()
+        )
 
-        # Начинаем рассылку
+    except Exception as e:
+        log.error(f"Error in process_direct_chat_ids: {e}")
+        await message.answer(settings.bot_admin_text.error_message)
+
+
+@router.message(AdminBroadcastStates.DIRECT_WAITING_FOR_CONFIRMATION)
+async def confirm_direct_broadcast(message: types.Message, state: FSMContext):
+    try:
+        if message.text.lower() != "да":
+            await message.answer("Рассылка отменена.")
+            await state.clear()
+            return
+
+        data = await state.get_data()
+        broadcast_messages = data['messages']
+        chat_ids = data['chat_ids']
+
         failed_chats = []
         success_counter = 0
 
@@ -146,9 +245,8 @@ async def process_direct_chat_ids(message: types.Message, state: FSMContext):
         )
 
         for chat_id in chat_ids:
-            # Проверяем не была ли отменена рассылка
             current_state = await state.get_state()
-            if current_state is None:  # Состояние было очищено через кнопку отмены
+            if current_state is None:
                 await status_message.edit_text(
                     f"Рассылка отменена.\n"
                     f"✅ Успешно отправлено: {success_counter} чатов\n"
@@ -217,8 +315,6 @@ async def process_direct_chat_ids(message: types.Message, state: FSMContext):
                         await message.bot.send_document(chat_id, doc[0], caption=doc[1], parse_mode='HTML')
 
                 success_counter += 1
-                
-                # Обновляем статус каждые 10 отправленных сообщений
                 if success_counter % 10 == 0:
                     await status_message.edit_text(
                         f"Отправка сообщений...\n"
@@ -250,5 +346,5 @@ async def process_direct_chat_ids(message: types.Message, state: FSMContext):
         await state.clear()
 
     except Exception as e:
-        log.error(f"Error in process_direct_chat_ids: {e}")
+        log.error(f"Error in confirm_direct_broadcast: {e}")
         await message.answer(settings.bot_admin_text.error_message)
