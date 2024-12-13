@@ -28,6 +28,8 @@ class CustomFileSystemStorage(FileSystemStorage):
         # TODO: Doublecheck (( ! ))
         if name.startswith("media/"):
             name = name[6:]
+        if name.startswith("bot/"):
+            name = name[4:]
         full_path = os.path.join(self.root_path, name)
         if os.path.exists(full_path):
             os.remove(full_path)
