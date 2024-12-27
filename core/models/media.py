@@ -1,6 +1,6 @@
 # core/models/media.py
 
-from sqlalchemy import String
+from sqlalchemy import String, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from fastapi_storages.integrations.sqlalchemy import FileType
@@ -33,3 +33,28 @@ class Media(Base):
 
     def __repr__(self):
         return f"<Media(id={self.id}, file_type={self.file_type})>"
+
+
+@event.listens_for(Media, 'before_update')
+def before_update_media(mapper, connection, target):
+    if hasattr(target, '_file_to_delete') and target._file_to_delete:
+        try:
+            bot_storage.delete(target._file_to_delete)
+        except Exception as e:
+            bot_storage.error(f"Error deleting old file: {str(e)}")
+        delattr(target, '_file_to_delete')
+
+
+@event.listens_for(Media.file, 'set')
+def on_file_set(target, value, oldvalue, initiator):
+    if oldvalue and oldvalue != value:
+        target._file_to_delete = oldvalue
+
+
+@event.listens_for(Media, 'after_delete')
+def after_delete_media(mapper, connection, target):
+    if target.file:
+        try:
+            bot_storage.delete(target.file)
+        except Exception as e:
+            bot_storage.error(f"Error deleting file: {str(e)}")

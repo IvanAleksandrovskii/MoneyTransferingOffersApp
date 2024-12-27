@@ -1,10 +1,15 @@
 # core/admin/models/media.py
+from typing import Any
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
 from fastapi import UploadFile
 
 from .base import BaseAdminModel
 from core.models import Media
-from core import logger as log
+from core import logger
+from core.models import db_helper
 from core.fastapi_storage import bot_storage
 
 
@@ -22,20 +27,42 @@ class MediaAdmin(BaseAdminModel, model=Media):
     icon = "fa-solid fa-image"
 
     category = "Important Data"
-
-
-    async def on_model_change(self, data, model, is_created, session):
-        file = data.get('file')
-        if isinstance(file, UploadFile):
+    
+    async def get_object(self, pk: Any) -> Media | None:
+        async with AsyncSession(db_helper.engine) as session:
             try:
-                filename = await bot_storage.put(file)
-                model.file = filename
+                stmt = select(Media).where(Media.id == pk)
+                result = await session.execute(stmt)
+                return result.scalar_one_or_none()
             except Exception as e:
-                log.error(f"Error uploading file: {e}")
-                raise ValueError("Error uploading file")
-
-    async def after_model_delete(self, model, session):
+                logger.error(f"Error getting Media with pk {pk}: {str(e)}")
+                return None
+    
+    async def after_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
         try:
-            await bot_storage.delete(model.file)
+            action = "Created" if is_created else "Updated"
+            logger.info(f"{action} Media")
         except Exception as e:
-            log.error(f"Error deleting file: {e}")
+            logger.error(f"Error in after_model_change for Media: {e}")
+
+        # Process file upload
+        file = data.get('file')
+        if file and isinstance(file, UploadFile):
+            try:
+                contents = await file.read()
+                file_path = await bot_storage.save(file.filename, contents)
+                model.file = file_path
+                logger.info(f"File uploaded")
+            except Exception as e:
+                logger.error(f"Error uploading file: {str(e)}")
+
+    async def delete_model(self, request: Request, pk: Any):
+        model = await self.get_object(pk)
+        if model and model.file:
+            try:
+                bot_storage.delete(model.file)
+                logger.info(f"File deleted")
+            except Exception as e:
+                logger.error(f"Error deleting file: {str(e)}")
+        return await super().delete_model(request, pk)
+
