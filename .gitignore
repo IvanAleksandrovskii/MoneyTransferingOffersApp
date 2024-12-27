@@ -18,3 +18,5 @@ ENV/
 .DS_Store
 
 **/__unused__/
+
+.vscode/
